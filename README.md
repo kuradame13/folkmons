@@ -2,8 +2,8 @@
 
 Jogo de criaturas inspirado no folclore brasileiro. O objetivo é explorar o
 mapa, escanear criaturas com o celular do jogo, batalhar, evoluir e trocar
-Folkmons. Não usa nomes, sprites nem mecânicas de Pokémon: a captura é feita
-pelo **Scan** do celular.
+Folkmons. Não usa nomes, sprites nem mecânicas de franquias de criaturas
+comerciais: a captura é feita pelo **Scan** do celular.
 
 ## O que já está pronto
 
@@ -13,9 +13,30 @@ pelo **Scan** do celular.
   [`docs/nuvem.md`](docs/nuvem.md) para ativar com duas chaves.
 - **Treinador visível no mapa**, com sprite próprio em 4 direções, animação de
   caminhada, sombra, seta e etiqueta “VOCÊ”. Ande com **WASD** ou setas.
+- **HUD inspirada em cliente de MMO**: localização, canal, relógio acelerado,
+  FPS e ping no canto superior esquerdo; equipe no canto superior direito;
+  chat com abas no canto inferior esquerdo; menu principal no canto inferior
+  direito; atalhos 1–9 no centro inferior e botão de **Scan** em destaque.
+- **Tela adaptável**: o cliente 800×600 escala para caber na janela sem cortar
+  a HUD; a batalha também se ajusta e usa o mesmo tema escuro.
+- **Barra da equipe clicável**: abre o submenu com **Sumário**, **Ordem do
+  time** e **Seguidor**. O Folkmom escolhido aparece caminhando no mapa.
+- **Menu principal completo**: Jogo, Mochila, Folclorédex, Cartão de
+  Treinador, GTL/Mercado, PvP, Social e Ajuda.
+- **Mochila com abas** de cura, evolução e chaves. Arraste itens curativos para
+  os atalhos 1–9; use evoluções por item; itens também podem ser comprados.
+- **Folclorédex** com busca, filtros por elemento/status, contagem de vistos e
+  capturados e ficha de cada Folkmom.
+- **GTL local**: compra e venda de Folkmons e itens com dinheiro do jogo.
+- **Arena PvP local 1v1**, ranking, rating e BP. O online chega quando a conta
+  na nuvem for ativada.
+- **Chat funcional** com canais Local, Global, Comércio, Sussurro, Equipe e
+  Batalha; mensagens do sistema registram scan, captura, cura, evolução,
+  compras e batalhas.
 - **Menu de batalha completo**: 4 golpes por Folkmom, vantagens de tipo,
   troca de Folkmom, itens, fuga, EXP, level up, recompensa em moedas e captura
-  ao vencer.
+  ao vencer. Atalhos de combate: **1–4** golpes, **5** itens, **6** troca,
+  **0** fugir.
 - 3 iniciais: **Iarinha** (Água), **Caiporinha** (Grama) e **Saci-Embrião**
   (Fogo).
 - 50 famílias de Folkmons do folclore, com 2 evoluções cada (153 formas no
@@ -41,7 +62,14 @@ pelo **Scan** do celular.
 7. No menu de batalha, escolha **Atacar** (4 golpes), **Trocar**, **Item** ou
    **Fugir**. Ao vencer, você ganha EXP, moedas e pode adicionar o Folkmom ao
    time.
-8. Troque com o NPC de trocas e use a senha no botão **Senha** do topo.
+8. Use os menus do canto inferior direito: **Mochila** (itens/atalhos),
+   **Dex** (Folclorédex), **Cartão** (ficha do treinador), **GTL** (mercado),
+   **PvP** (duelos locais), **Social** (amigos, guilda, correio e trocas) e
+   **Ajuda**. O menu **Jogo** tem salvar, tela cheia, trocar senha e sair.
+9. Clique nos slots do canto superior direito para abrir **Sumário**, mudar a
+   **Ordem** do time ou escolher o **Seguidor** que caminha no mapa.
+10. Arraste itens curativos da Mochila para os atalhos **1–9** ou use o botão
+    **→ Atalho**. Botão direito em um atalho limpa o slot.
 
 Se o navegador bloquear alguma coisa ao abrir direto pelo `file://`, rode um
 servidor local:
@@ -102,9 +130,9 @@ git push -u origin main
 index.html            versão de publicação
 index_new.html        cópia de trabalho
 index_antigo.html     protótipo antigo (backup)
-style.css             estilos do jogo
+style.css             estilos do jogo, HUD, chat, menus e batalha
 folkmons_data.js      dados dos 153 Folkmons, itens e evoluções
-game_new.js           lógica do jogo (login, mapa, scan, batalha, trocas)
+game_new.js           lógica do jogo (login, mapa, HUD, chat, scan, batalha, menus)
 cloud_config.js       URL e chave anon do Supabase
 cloud_auth.js         login/cadastro/senha/save na nuvem
 vendor/supabase.js    SDK do Supabase (para funcionar sem CDN)
@@ -128,9 +156,10 @@ Passo a passo completo: [`docs/nuvem.md`](docs/nuvem.md).
 Com a nuvem ligada:
 
 - cadastro por e-mail, login e senha com hash no Supabase;
-- botão **Senha** no jogo para trocar a senha logado;
+- **Menu do Jogo → Trocar senha** para alterar a senha logado;
 - aba **Redefinir Senha** para receber link por e-mail;
-- save (time, itens, posição, evoluções) sincronizado na conta.
+- save (time, itens, posição, evoluções, Folclorédex, atalhos, seguidor,
+  amigos e guilda local) sincronizado na conta.
 
 A chave **anon** é pública e pode ficar no site. Nunca use a
 **service_role** no navegador.
@@ -208,6 +237,6 @@ Ideias de lendários: `docs/legendarios.md`.
 - O projeto é um protótipo: balanceamento, mapas e quests ainda podem mudar.
 - Confira os sprites na galeria. Alguns podem precisar de ajuste manual (por
   exemplo, o Saci às vezes sai com duas pernas).
-- Não use nomes, sprites ou assets oficiais de Pokémon. O folclore brasileiro é
+- Não use nomes, sprites ou assets oficiais de outras franquias. O folclore brasileiro é
   patrimônio cultural; use com respeito, principalmente figuras sagradas como
   Jurupari.

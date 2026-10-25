@@ -1,6 +1,34 @@
 // Folkmons - Jogo base folclore brasileiro
 let currentUser = null;
 
+// Estado da HUD no estilo cliente de MMO.
+const CHAT_TABS = ['Local', 'Global', 'Comércio', 'Sussurro', 'Equipe', 'Batalha'];
+const chatState = {
+    active: 'Local',
+    messages: {},
+    unread: {},
+    initialized: false
+};
+let gameSessionStart = Date.now();
+let fpsFrames = 0;
+let fpsLast = performance.now();
+let currentFps = 0;
+let partySelectedIndex = -1;
+let lastPartySignature = '';
+let lastHotbarSignature = '';
+let lastTopHudUpdate = 0;
+let bagTab = 'heal';
+let currentMenuType = '';
+let dexFilter = { search: '', element: 'all', status: 'all' };
+let marketOffers = [];
+let followerMon = null;
+let followerImg = null;
+let followerImageId = '';
+let followerReady = false;
+let toastTimer = null;
+let playTimer = null;
+let hudTimer = null;
+
 // All folkmons flattened
 let ALL_FOLKMONS = [];
 FOLKMONS.starters.forEach(s => ALL_FOLKMONS.push({...s, evoType: "starter"}));
@@ -63,7 +91,24 @@ function newPlayer() {
         items: { cura_simples: 5 },
         evoItems: {},
         missions: [],
-        stats: { scans: 0, captures: 0, battlesWon: 0, evolves: 0 },
+        stats: {
+            scans: 0,
+            captures: 0,
+            battlesWon: 0,
+            evolves: 0,
+            bp: 0,
+            playSeconds: 0,
+            pvpWins: 0,
+            pvpLosses: 0,
+            pvpRating: 1000
+        },
+        dex: { seen: {}, caught: {} },
+        hotbar: ['cura_simples', null, null, null, null, null, null, null, null],
+        followerIndex: 0,
+        trainerName: '',
+        friends: [],
+        guild: '',
+        settings: { chat: true, hotbar: true },
         pos: { x: 400, y: 300 },
         starterChosen: false
     };
@@ -80,7 +125,39 @@ function normalizePlayer() {
     player.evoItems = player.evoItems || {};
     player.team = Array.isArray(player.team) ? player.team.filter(Boolean) : [];
     player.missions = Array.isArray(player.missions) ? player.missions : [];
+    player.dex = Object.assign({ seen: {}, caught: {} }, player.dex || {});
+    player.dex.seen = player.dex.seen || {};
+    player.dex.caught = player.dex.caught || {};
+    player.hotbar = Array.isArray(player.hotbar) ? player.hotbar.slice(0, 9) : [];
+    while(player.hotbar.length < 9) player.hotbar.push(null);
+    if(!player.hotbar[0] && player.items.cura_simples > 0) player.hotbar[0] = 'cura_simples';
+    player.followerIndex = Number.isFinite(player.followerIndex) ? player.followerIndex : 0;
+    if(player.followerIndex < 0 || player.followerIndex >= Math.max(1, player.team.length)) player.followerIndex = 0;
+    player.friends = Array.isArray(player.friends) ? player.friends : [];
+    player.guild = typeof player.guild === 'string' ? player.guild : '';
+    player.trainerName = typeof player.trainerName === 'string' ? player.trainerName : '';
+    player.settings = Object.assign({ chat: true, hotbar: true }, player.settings || {});
     if(!player.pos) player.pos = { x: 400, y: 300 };
+
+    // Saves antigos não tinham Folclorédex. O time atual conta como visto/capturado.
+    player.team.forEach(mon => {
+        if(!mon || !mon.id) return;
+        player.dex.seen[mon.id] = true;
+        player.dex.caught[mon.id] = true;
+    });
+}
+
+function markDexSeen(id) {
+    if(!id) return;
+    if(!player.dex) player.dex = { seen: {}, caught: {} };
+    player.dex.seen[id] = true;
+}
+
+function markDexCaught(id) {
+    if(!id) return;
+    if(!player.dex) player.dex = { seen: {}, caught: {} };
+    player.dex.seen[id] = true;
+    player.dex.caught[id] = true;
 }
 
 function cloudErrorMessage(err) {
@@ -163,10 +240,55 @@ function enterGame(displayName) {
     const passwordOverlay = document.getElementById('passwordOverlay');
     if(passwordOverlay) passwordOverlay.style.display = 'none';
 
+    normalizePlayer();
+    player.trainerName = displayName || player.trainerName || currentUser || 'Treinador';
+    gameSessionStart = Date.now();
+    partySelectedIndex = -1;
+    marketOffers = [];
+    bagTab = 'heal';
+    dexFilter = { search: '', element: 'all', status: 'all' };
+
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('gameScreen').style.display = 'flex';
-    document.getElementById('playerName').textContent = displayName || 'Treinador';
+    document.getElementById('playerName').textContent = player.trainerName;
+    fitGameClient();
+    applyHUDVisibility();
+    initChatUI();
     initGame();
+    updateTopHUD();
+    updatePartyBar(true);
+    renderHotbar();
+    refreshFollower();
+    startPlayTimer();
+    updateHUD();
+}
+
+// Ajusta o cliente de 800x600 ao espaço disponível, mantendo a HUD inteira visível.
+function fitGameClient() {
+    const screen = document.getElementById('gameScreen');
+    const client = document.querySelector('.game-client');
+    const container = document.querySelector('.game-container');
+    if(!screen || !client || !container || screen.style.display === 'none') return;
+    if(!screen.clientWidth || !screen.clientHeight) return;
+
+    const scale = Math.max(0.32, Math.min(1.55,
+        (screen.clientWidth - 24) / 800,
+        (screen.clientHeight - 24) / 600
+    ));
+    client.style.width = (800 * scale) + 'px';
+    client.style.height = (600 * scale) + 'px';
+    container.style.transform = 'scale(' + scale + ')';
+}
+
+function fitBattleScreen() {
+    const overlay = document.getElementById('battleScreen');
+    const box = overlay && overlay.querySelector('.battle-container');
+    if(!overlay || !box || overlay.style.display === 'none') return;
+    const scale = Math.max(0.45, Math.min(1.8,
+        (window.innerWidth - 28) / 640,
+        (window.innerHeight - 28) / 430
+    ));
+    box.style.transform = 'scale(' + scale + ')';
 }
 
 function showTab(tab) {
@@ -426,6 +548,8 @@ async function logout() {
     currentUser = null;
     keys = {};
     currentBattle = null;
+    player = {};
+    closePartyMenu();
     if(scanInterval) {
         clearInterval(scanInterval);
         scanInterval = null;
@@ -444,6 +568,18 @@ async function logout() {
     if(battleActions) battleActions.innerHTML = '';
     const menuOverlay = document.getElementById('menuOverlay');
     if(menuOverlay) menuOverlay.style.display = 'none';
+    hideToast();
+
+    chatState.active = 'Local';
+    chatState.messages = {};
+    chatState.unread = {};
+    chatState.initialized = false;
+    lastPartySignature = '';
+    lastHotbarSignature = '';
+    followerMon = null;
+    followerImg = null;
+    followerReady = false;
+    followerImageId = '';
 
     document.getElementById('gameScreen').style.display = 'none';
     document.getElementById('authScreen').style.display = 'flex';
@@ -517,15 +653,109 @@ function loadTrainerSheet() {
     trainerSheet.src = 'assets/trainer/trainer_sheet.png';
 }
 
+function isTypingTarget(target) {
+    if(!target) return false;
+    const tag = (target.tagName || '').toLowerCase();
+    return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+}
+
+function isGamePaused() {
+    if(currentBattle) return true;
+    const menu = document.getElementById('menuOverlay');
+    const pass = document.getElementById('passwordOverlay');
+    if(menu && menu.style.display !== 'none') return true;
+    if(pass && pass.style.display !== 'none') return true;
+    return false;
+}
+
 function setupControls() {
     if(controlsReady) return;
     controlsReady = true;
     document.addEventListener('keydown', (e) => {
+        if(isTypingTarget(e.target)) {
+            if(e.key === 'Escape') e.target.blur();
+            return;
+        }
+
+        if(e.key === 'Escape') {
+            closeTopOverlay();
+            return;
+        }
+
+        if(currentBattle) {
+            handleBattleShortcut(e);
+            return;
+        }
+
+        if(isGamePaused()) return;
+
+        if(e.key === 'e' || e.key === 'E') {
+            e.preventDefault();
+            openMenu('phone');
+            return;
+        }
+
+        if(/^[1-9]$/.test(e.key)) {
+            e.preventDefault();
+            useHotbarSlot(Number(e.key) - 1);
+            return;
+        }
+
         keys[e.key] = true;
         if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
     });
     document.addEventListener('keyup', (e) => { keys[e.key] = false; });
     window.addEventListener('blur', () => { keys = {}; });
+    document.addEventListener('click', (e) => {
+        const context = document.getElementById('partyContext');
+        if(!context || context.style.display === 'none') return;
+        if(context.contains(e.target)) return;
+        if(e.target.closest && e.target.closest('#partySlots')) return;
+        closePartyMenu();
+    });
+}
+
+function handleBattleShortcut(e) {
+    if(!currentBattle || currentBattle.busy || currentBattle.over) return;
+    if(/^[1-4]$/.test(e.key)) {
+        e.preventDefault();
+        useMove(Number(e.key) - 1);
+        return;
+    }
+    if(e.key === '5') {
+        e.preventDefault();
+        battleMenu('items');
+        return;
+    }
+    if(e.key === '6') {
+        e.preventDefault();
+        battleMenu('switch');
+        return;
+    }
+    if(e.key === '0') {
+        e.preventDefault();
+        battleAction('run');
+    }
+}
+
+function closeTopOverlay() {
+    const party = document.getElementById('partyContext');
+    if(party && party.style.display !== 'none') { closePartyMenu(); return; }
+    const menu = document.getElementById('menuOverlay');
+    if(menu && menu.style.display !== 'none') { closeMenu(); return; }
+    const pass = document.getElementById('passwordOverlay');
+    if(pass && pass.style.display !== 'none') { closeChangePassword(); return; }
+}
+
+function chatInputKeydown(e) {
+    e.stopPropagation();
+    if(e.key === 'Enter') {
+        e.preventDefault();
+        sendChat();
+    } else if(e.key === 'Escape') {
+        e.preventDefault();
+        e.target.blur();
+    }
 }
 
 // Inicializar jogo
@@ -533,9 +763,11 @@ function initGame() {
     canvas = document.getElementById('gameMap');
     ctx = canvas.getContext('2d');
 
+    normalizePlayer();
     ensurePlayerPosition();
     loadTrainerSheet();
     setupControls();
+    startHUDTimer();
 
     if(!player.starterChosen) {
         chooseStarter();
@@ -544,11 +776,17 @@ function initGame() {
 
     generateMap();
     updateHUD();
+    updatePartyBar(true);
+    renderHotbar();
+    refreshFollower();
+    updateTopHUD();
     gameLoop();
 }
 
 function chooseStarter() {
     document.getElementById('menuOverlay').style.display = 'flex';
+    const menuBox = document.getElementById('menuBox');
+    if(menuBox) menuBox.classList.remove('menu-wide');
     document.getElementById('menuTitle').textContent = 'Escolha seu Folkmom Inicial';
     const content = document.getElementById('menuContent');
     content.innerHTML = '<p style="text-align:center; margin-bottom:20px;">Escolha entre os 3 elementos: Água, Grama e Fogo</p>';
@@ -568,12 +806,20 @@ function chooseStarter() {
 function selectStarter(starterId) {
     player.team = [createFolkmom(starterId, 5)];
     player.starterChosen = true;
+    player.followerIndex = 0;
+    markDexCaught(starterId);
     closeMenu();
     ensurePlayerPosition();
     loadTrainerSheet();
     setupControls();
     generateMap();
     updateHUD();
+    updatePartyBar(true);
+    renderHotbar();
+    refreshFollower();
+    addChatMessage('Local', 'Você escolheu ' + player.team[0].name + ' como parceiro inicial!', 'system');
+    addChatMessage('Equipe', player.team[0].name + ' entrou no time.', 'system');
+    showToast('Você escolheu ' + player.team[0].name + '!', 'success');
     gameLoop();
     saveGame();
 }
@@ -611,13 +857,31 @@ function gameLoop() {
     if(document.getElementById('gameScreen').style.display === 'none') return;
     updatePlayer();
     drawMap();
+    drawFollower();
     drawPlayer();
     updateHUD();
     checkItemPickup();
+    trackFps();
     requestAnimationFrame(gameLoop);
 }
 
+function trackFps() {
+    fpsFrames++;
+    const now = performance.now();
+    if(now - fpsLast >= 500) {
+        currentFps = Math.round((fpsFrames * 1000) / (now - fpsLast));
+        fpsFrames = 0;
+        fpsLast = now;
+        const el = document.getElementById('hudFps');
+        if(el) el.textContent = currentFps;
+    }
+}
+
 function updatePlayer() {
+    if(isGamePaused()) {
+        player.moving = false;
+        return;
+    }
     const speed = 3;
     let dx = 0, dy = 0;
     if(keys['ArrowUp'] || keys['w'] || keys['W']) dy -= 1;
@@ -721,9 +985,94 @@ function drawPlayer() {
     ctx.restore();
 }
 
+function refreshFollower() {
+    if(!player || !Array.isArray(player.team) || player.team.length === 0) {
+        followerMon = null;
+        followerImg = null;
+        followerReady = false;
+        followerImageId = '';
+        return;
+    }
+    if(!Number.isFinite(player.followerIndex) || player.followerIndex < 0 || player.followerIndex >= player.team.length) {
+        player.followerIndex = 0;
+    }
+    const mon = player.team[player.followerIndex] || null;
+    followerMon = mon;
+    if(!mon) return;
+    const id = mon.id;
+    if(followerImageId === id && (followerReady || followerImg)) return;
+
+    followerImageId = id;
+    followerReady = false;
+    followerImg = null;
+    const img = new Image();
+    img.onload = () => {
+        if(followerImageId === id) {
+            followerImg = img;
+            followerReady = true;
+        }
+    };
+    img.onerror = () => {
+        if(followerImageId === id) {
+            followerReady = false;
+            followerImg = null;
+        }
+    };
+    img.src = 'assets/sprites/' + id + '.png';
+}
+
+function drawFollower() {
+    if(!followerMon) return;
+    const dir = player.dir || 0;
+    let fx = player.x;
+    let fy = player.y + 4;
+    if(dir === 0) fx -= 27;
+    else if(dir === 1) fx += 25;
+    else if(dir === 2) fx -= 25;
+    else { fx += 25; fy += 2; }
+    fx = Math.max(18, Math.min(782, fx));
+    fy = Math.max(24, Math.min(582, fy));
+
+    const frame = player.moving ? (Math.floor(performance.now() / 180) % 2) : 0;
+    const bob = frame === 1 ? -1 : 0;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath();
+    ctx.ellipse(fx, fy + 8, 10, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if(followerReady && followerImg) {
+        ctx.drawImage(followerImg, fx - 16, fy - 22 + bob, 32, 32);
+    } else {
+        ctx.font = '25px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(followerMon.sprite || '🐾', fx, fy - 2 + bob);
+    }
+
+    // Pequeno marcador de seguidor.
+    ctx.fillStyle = '#4ade80';
+    ctx.strokeStyle = '#052e16';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(fx, fy + 16, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+}
+
 function updateHUD() {
-    document.getElementById('playerLevel').textContent = player.level || 1;
-    document.getElementById('playerMoney').textContent = player.money || 0;
+    if(!player || typeof player !== 'object') return;
+    const nameEl = document.getElementById('playerName');
+    if(nameEl) nameEl.textContent = player.trainerName || currentUser || 'Treinador';
+    const levelEl = document.getElementById('playerLevel');
+    if(levelEl) levelEl.textContent = player.level || 1;
+    const moneyEl = document.getElementById('playerMoney');
+    if(moneyEl) moneyEl.textContent = formatNumber(player.money || 0);
+    updatePartyBar();
+    renderHotbar();
+    updateTopHUD();
 }
 
 function checkItemPickup() {
@@ -735,78 +1084,1360 @@ function checkItemPickup() {
             const randomEvo = evoKeys[Math.floor(Math.random() * evoKeys.length)];
             player.evoItems[randomEvo] = (player.evoItems[randomEvo] || 0) + 1;
             gameMap[tileY][tileX] = 1;
-            alert('Você encontrou: ' + EVO_ITEMS[randomEvo].name + '!\n' + EVO_ITEMS[randomEvo].desc);
+            addChatMessage('Local', 'Você encontrou ' + EVO_ITEMS[randomEvo].name + '! ' + EVO_ITEMS[randomEvo].desc, 'system');
+            showToast('Encontrou: ' + EVO_ITEMS[randomEvo].name + '!', 'success');
             saveGame();
         }
     }
 }
 
-// Menu
-function openMenu(menu) {
-    document.getElementById('menuOverlay').style.display = 'flex';
-    const title = document.getElementById('menuTitle');
+// ===================== MENUS / HUD CENTRAL =====================
+function isMenuOpen() {
+    const overlay = document.getElementById('menuOverlay');
+    return !!overlay && overlay.style.display !== 'none';
+}
+
+function setMenu(title, html, wide) {
+    const overlay = document.getElementById('menuOverlay');
+    const box = document.getElementById('menuBox');
+    if(!overlay || !box) return;
+    document.getElementById('menuTitle').textContent = title;
+    document.getElementById('menuContent').innerHTML = html;
+    box.classList.toggle('menu-wide', !!wide);
+    overlay.style.display = 'flex';
     const content = document.getElementById('menuContent');
-    
-    if(menu === 'team') {
-        title.textContent = 'Meu Time Folkmons';
-        content.innerHTML = '';
-        if(player.team.length === 0) content.innerHTML = '<p>Nenhum Folkmom no time</p>';
-        else {
-            player.team.forEach((mon, idx) => {
-                content.innerHTML += '<div class="team-slot">' +
-                    '<div class="monster-sprite">' + monsterSpriteHTML(mon, 'team-img') + '</div>' +
-                    '<div class="monster-info">' +
-                    '<strong>' + mon.name + '</strong> Lv.' + mon.level + ' | ' + mon.element + ' | ' + mon.folklore + '<br>' +
-                    'HP: ' + mon.hp + '/' + mon.maxHp + ' | ATK: ' + mon.atk + ' | DEF: ' + mon.def + '<br>' +
-                    '<div class="hp-bar"><div class="hp-fill" style="width:' + (mon.hp/mon.maxHp*100) + '%"></div></div>' +
-                    '</div>' +
-                    '</div>';
-            });
-        }
-    } else if(menu === 'items') {
-        title.textContent = 'Inventário';
-        content.innerHTML = '<h4>Itens Curativos</h4><div class="item-grid">';
-        for(let itemId in player.items) {
-            if(player.items[itemId] > 0) {
-                const item = ITEMS[itemId];
-                content.innerHTML += '<div class="item-card"><div style="font-size:30px">' + item.sprite + '</div><strong>' + item.name + '</strong><br>x' + player.items[itemId] + '<br><small>' + item.desc + '</small></div>';
-            }
-        }
-        content.innerHTML += '</div><h4 style="margin-top:15px;">Itens de Evolução</h4><div class="item-grid">';
-        for(let itemId in player.evoItems) {
-            if(player.evoItems[itemId] > 0) {
-                const item = EVO_ITEMS[itemId];
-                content.innerHTML += '<div class="item-card"><div style="font-size:30px">' + item.sprite + '</div><strong>' + item.name + '</strong><br>x' + player.evoItems[itemId] + '<br><small>' + item.desc + '</small></div>';
-            }
-        }
-        content.innerHTML += '</div>';
-    } else if(menu === 'trades') {
-        title.textContent = 'Trocas para Evolução';
-        content.innerHTML = '<p>10 Folkmons evoluem por troca. Troque o par correto!</p>' +
-            '<div class="team-slot"><div class="monster-sprite">🐓</div><div class="monster-info"><strong>Galo-Fantasma (FM011)</strong> + <strong>Cão-Cinza (FM012)</strong> → <strong>Galo das Almas + Cão das Encruzilhadas</strong></div></div>' +
-            '<div class="team-slot"><div class="monster-sprite">🦡</div><div class="monster-info"><strong>Tatu-Assombrado (FM013)</strong> + <strong>João-de-Barro (FM014)</strong> → Evoluções por troca</div></div>' +
-            '<div class="team-slot"><div class="monster-sprite">🐸</div><div class="monster-info"><strong>Sapo-Prateado (FM015)</strong> + <strong>Rã-Vermelha (FM016)</strong> → Evoluções por troca</div></div>' +
-            '<div class="team-slot"><div class="monster-sprite">🐬</div><div class="monster-info"><strong>Boto-Cinza (FM017)</strong> + <strong>Peixe-Boi (FM018)</strong> → Evoluções por troca</div></div>' +
-            '<div class="team-slot"><div class="monster-sprite">🐵</div><div class="monster-info"><strong>Macaco-Prego (FM019)</strong> + <strong>Sagui-Fantasma (FM020)</strong> → Evoluções por troca</div></div>' +
-            '<button onclick="doTradeMenu()" style="width:100%; padding:12px; margin-top:10px; background:#667eea; color:white; border:none; border-radius:8px;">Realizar Troca (se tiver par)</button>' +
-            '<p id="tradeMsg" class="msg"></p>';
-    } else if(menu === 'phone') {
-        title.textContent = '📱 Celular - Sistema de Scan';
-        content.innerHTML = '<h3>Scan para Capturar Folkmons</h3>' +
-            '<p>Use o celular para escanear a área. Quanto maior o % de Scan, maior a chance!</p>' +
-            '<div style="text-align:center; padding:30px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:15px; margin:15px 0; color:white;">' +
-            '<div style="font-size:80px">📱</div>' +
-            '<div style="margin-top:10px; font-size:24px;"><strong id="scanPercent">0%</strong></div>' +
-            '<div style="margin-top:5px;">Status: <span id="scanStatus">Pronto</span></div>' +
-            '</div>' +
-            '<button onclick="startScan()" style="width:100%; padding:12px; background:#4CAF50; color:white; border:none; border-radius:8px; margin-bottom:8px;">Iniciar Scan</button>' +
-            '<button onclick="fixScan()" style="width:100%; padding:12px; background:#FF9800; color:white; border:none; border-radius:8px;">Consertar Scan (se >=100%)</button>' +
-            '<p id="phoneMsg" class="msg"></p>';
-    }
+    content.scrollTop = 0;
+}
+
+function openMenu(menu) {
+    currentMenuType = menu;
+    if(menu === 'team') renderTeamMenu();
+    else if(menu === 'summary') openSummary(partySelectedIndex >= 0 ? partySelectedIndex : 0);
+    else if(menu === 'items') renderBagMenu();
+    else if(menu === 'trades') renderTradesMenu();
+    else if(menu === 'phone') renderPhoneMenu();
+    else if(menu === 'game') renderGameMenu();
+    else if(menu === 'dex') renderDexMenu();
+    else if(menu === 'card') renderTrainerCard();
+    else if(menu === 'market') renderMarketMenu();
+    else if(menu === 'pvp') renderPvpMenu();
+    else if(menu === 'social') renderSocialMenu();
+    else if(menu === 'help') renderHelpMenu();
+    else setMenu('Menu', '<p>Menu indisponível.</p>', false);
 }
 
 function closeMenu() {
-    document.getElementById('menuOverlay').style.display = 'none';
+    const overlay = document.getElementById('menuOverlay');
+    if(overlay) overlay.style.display = 'none';
+    currentMenuType = '';
+}
+
+function formatNumber(value) {
+    return Number(value || 0).toLocaleString('pt-BR');
+}
+
+function escapeHTML(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[ch]));
+}
+
+function formatPlayTime(seconds) {
+    const total = Math.max(0, Math.floor(Number(seconds) || 0));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+
+function monName(id) {
+    const base = getFolkmomById(id);
+    return base ? base.name : id;
+}
+
+function evolutionDescription(base) {
+    if(!base) return 'Dados de evolução indisponíveis.';
+    const targets = (base.evoTo || []).map(id => monName(id)).join(', ');
+    if(base.evoType === 'level') {
+        return 'Evolui no nível ' + base.evoLevel + ' para ' + (targets || '???') + '.';
+    }
+    if(base.evoType === 'item') {
+        const item = EVO_ITEMS[base.evoItem];
+        return 'Usa ' + (item ? item.name : base.evoItem) + ' para evoluir para ' + (targets || '???') + '.';
+    }
+    if(base.evoType === 'trade') {
+        return 'Evolui por troca com ' + monName(base.tradeWith) + ' para ' + (targets || '???') + '.';
+    }
+    if(base.evoType === 'starter') return 'Forma inicial. Evolução especial em breve.';
+    return 'Forma final de sua linhagem.';
+}
+
+function hpPercent(mon) {
+    if(!mon) return 0;
+    if(!mon.maxHp) mon.maxHp = mon.hp || 1;
+    return Math.max(0, Math.min(100, (mon.hp / mon.maxHp) * 100));
+}
+
+function hpClass(mon) {
+    const pct = hpPercent(mon);
+    return pct > 50 ? '' : pct > 25 ? 'low' : 'critical';
+}
+
+function renderTeamMenu() {
+    const team = player.team || [];
+    let html = '<div class="menu-section-title"><span>Time de Folkmons</span><span>' + team.length + '/6</span></div>';
+    if(team.length === 0) {
+        html += '<div class="menu-note">Nenhum Folkmom no time. Use o Scanner para encontrar um parceiro.</div>';
+        html += '<button class="menu-action" onclick="openMenu(\'phone\')">📱 Abrir Scanner</button>';
+        setMenu('Meu Time', html, false);
+        return;
+    }
+
+    team.forEach((mon, idx) => {
+        const follower = idx === player.followerIndex;
+        const pct = hpPercent(mon);
+        html += '<div class="team-slot' + (follower ? ' selected' : '') + '">' +
+            '<div class="monster-sprite">' + monsterSpriteHTML(mon, 'team-img') + '</div>' +
+            '<div class="monster-info">' +
+                '<strong>' + escapeHTML(mon.name) + '</strong> Lv.' + mon.level + ' ' +
+                '<small>· ' + escapeHTML(mon.element) + '</small><br>' +
+                '<small>' + escapeHTML(mon.folklore || '') + '</small>' +
+                '<div class="hp-bar"><div class="hp-fill" style="width:' + pct + '%;background:' + (pct > 50 ? '#4ade80' : pct > 25 ? '#fbbf24' : '#f87171') + '"></div></div>' +
+                '<small>PV ' + Math.max(0, mon.hp) + '/' + mon.maxHp + ' · ATK ' + mon.atk + ' · DEF ' + mon.def + '</small>' +
+                '<div class="team-actions">' +
+                    '<button class="mini-btn" onclick="openSummary(' + idx + ')">📋 Sumário</button>' +
+                    '<button class="mini-btn" onclick="moveTeamMember(' + idx + ',-1)" ' + (idx === 0 ? 'disabled' : '') + '>↑</button>' +
+                    '<button class="mini-btn" onclick="moveTeamMember(' + idx + ',1)" ' + (idx === team.length - 1 ? 'disabled' : '') + '>↓</button>' +
+                    '<button class="mini-btn ' + (follower ? 'active' : '') + '" onclick="setFollower(' + idx + ')">🐾 ' + (follower ? 'Seguindo' : 'Seguidor') + '</button>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    });
+    html += '<div class="menu-note">O Folkmom com borda verde segue você pelo mapa. Use ↑/↓ para mudar a ordem do time.</div>';
+    setMenu('Meu Time', html, true);
+}
+
+function openSummary(index) {
+    const mon = player.team && player.team[index];
+    if(!mon) return;
+    currentMenuType = 'summary';
+    const base = getFolkmomById(mon.id) || mon.baseData || {};
+    const moves = getMoves(mon);
+    const pct = hpPercent(mon);
+    let html = '<div class="team-slot selected">' +
+        '<div class="monster-sprite">' + monsterSpriteHTML(mon, 'team-img') + '</div>' +
+        '<div class="monster-info">' +
+            '<strong>' + escapeHTML(mon.name) + '</strong> Lv.' + mon.level + '<br>' +
+            '<small>' + escapeHTML(mon.element) + ' · ' + escapeHTML(mon.folklore || '') + '</small>' +
+            '<div class="hp-bar"><div class="hp-fill" style="width:' + pct + '%"></div></div>' +
+            '<small>PV ' + Math.max(0, mon.hp) + '/' + mon.maxHp + '</small>' +
+        '</div>' +
+    '</div>';
+
+    html += '<div class="menu-section"><div class="menu-section-title">Atributos</div><div class="trainer-stats">' +
+        '<div class="stat-row"><span>HP</span><b>' + mon.hp + '/' + mon.maxHp + '</b></div>' +
+        '<div class="stat-row"><span>Ataque</span><b>' + mon.atk + '</b></div>' +
+        '<div class="stat-row"><span>Defesa</span><b>' + mon.def + '</b></div>' +
+        '<div class="stat-row"><span>EXP</span><b>' + (mon.exp || 0) + '/' + (mon.expToNext || 1) + '</b></div>' +
+    '</div></div>';
+
+    html += '<div class="menu-section"><div class="menu-section-title">Golpes</div>';
+    moves.forEach(move => {
+        const detail = move.type === 'damage' ? ('Poder ' + move.power) : (move.desc || 'Efeito');
+        html += '<div class="stat-row"><span>' + escapeHTML(move.name) + '</span><b>' + escapeHTML(move.element) + ' · ' + escapeHTML(detail) + '</b></div>';
+    });
+    html += '</div>';
+
+    html += '<div class="menu-section"><div class="menu-section-title">Evolução</div><p>' + escapeHTML(evolutionDescription(base)) + '</p></div>';
+    html += '<div class="menu-grid-2" style="margin-top:12px;">' +
+        '<button class="menu-action" onclick="setFollower(' + index + ')">🐾 ' + (index === player.followerIndex ? 'Já é o seguidor' : 'Tornar seguidor') + '</button>' +
+        '<button class="menu-action" onclick="openMenu(\'team\')">↩ Voltar ao time</button>' +
+    '</div>';
+    setMenu('Sumário · ' + mon.name, html, false);
+}
+
+function moveTeamMember(index, delta) {
+    const target = index + delta;
+    if(!player.team[index] || !player.team[target]) return;
+    const previousFollower = player.followerIndex;
+    const temp = player.team[target];
+    player.team[target] = player.team[index];
+    player.team[index] = temp;
+    if(previousFollower === index) player.followerIndex = target;
+    else if(previousFollower === target) player.followerIndex = index;
+    refreshFollower();
+    updatePartyBar(true);
+    saveGame();
+    renderTeamMenu();
+}
+
+function setFollower(index) {
+    if(!player.team[index]) return;
+    player.followerIndex = index;
+    refreshFollower();
+    updatePartyBar(true);
+    saveGame();
+    closePartyMenu();
+    const mon = player.team[index];
+    addChatMessage('Equipe', mon.name + ' agora segue você pelo mapa.', 'system');
+    showToast(mon.name + ' está seguindo você!', 'success');
+    if(isMenuOpen() && currentMenuType === 'team') renderTeamMenu();
+    if(isMenuOpen() && currentMenuType === 'summary') openSummary(index);
+}
+
+function renderBagMenu() {
+    const tabs = [
+        ['heal', '🌿 Cura'],
+        ['evo', '🔮 Evolução'],
+        ['key', '🔑 Chaves']
+    ];
+    let html = '<div class="menu-toolbar">' + tabs.map(t =>
+        '<button class="menu-tab ' + (bagTab === t[0] ? 'active' : '') + '" onclick="setBagTab(\'' + t[0] + '\')">' + t[1] + '</button>'
+    ).join('') + '</div>';
+
+    if(bagTab === 'heal') {
+        html += '<div class="menu-section"><div class="menu-section-title"><span>Itens curativos</span><span>Arraste para os atalhos</span></div><div class="item-grid">';
+        let has = false;
+        Object.keys(ITEMS).forEach(itemId => {
+            const item = ITEMS[itemId];
+            const count = player.items[itemId] || 0;
+            if(count <= 0 || item.effect !== 'heal') return;
+            has = true;
+            html += '<div class="item-card" draggable="true" ondragstart="dragItem(event,\'' + itemId + '\')">' +
+                '<div class="item-sprite">' + item.sprite + '</div>' +
+                '<strong>' + escapeHTML(item.name) + '</strong><br>x' + count +
+                '<br><small>' + escapeHTML(item.desc) + '</small>' +
+                '<div class="item-actions">' +
+                    '<button class="mini-btn" onclick="useHealingItemOutside(\'' + itemId + '\')">Usar</button>' +
+                    '<button class="mini-btn" onclick="assignItemToHotbar(\'' + itemId + '\')">→ Atalho</button>' +
+                '</div>' +
+            '</div>';
+        });
+        if(!has) html += '<div class="menu-note">Nenhum item curativo. Procure baús e o Mercado.</div>';
+        html += '</div></div>';
+    } else if(bagTab === 'evo') {
+        html += '<div class="menu-section"><div class="menu-section-title"><span>Itens de evolução</span><span>' + Object.keys(EVO_ITEMS).length + ' tipos</span></div><div class="item-grid">';
+        let has = false;
+        Object.keys(EVO_ITEMS).forEach(itemId => {
+            const count = player.evoItems[itemId] || 0;
+            if(count <= 0) return;
+            has = true;
+            const item = EVO_ITEMS[itemId];
+            const targets = countEvolutionTargets(itemId);
+            html += '<div class="item-card">' +
+                '<div class="item-sprite">' + item.sprite + '</div>' +
+                '<strong>' + escapeHTML(item.name) + '</strong><br>x' + count +
+                '<br><small>' + escapeHTML(item.desc) + '</small>' +
+                '<div class="item-actions">' +
+                    '<button class="mini-btn" onclick="useEvolutionItem(\'' + itemId + '\')" ' + (targets ? '' : 'disabled') + '>' +
+                        (targets ? 'Evoluir (' + targets + ')' : 'Sem alvo') +
+                    '</button>' +
+                '</div>' +
+            '</div>';
+        });
+        if(!has) html += '<div class="menu-note">Nenhum item de evolução. Explore o mapa para encontrar baús.</div>';
+        html += '</div></div>';
+        html += '<div class="menu-note">Itens de evolução são usados em Folkmons compatíveis que já estão no time.</div>';
+    } else {
+        html += '<div class="menu-section"><div class="menu-section-title">Itens-chave</div>' +
+            '<div class="menu-grid-2">' +
+                '<button class="menu-action" onclick="openMenu(\'phone\')">📱 Celular · Scanner</button>' +
+                '<button class="menu-action" onclick="openMenu(\'dex\')">📖 Folclorédex</button>' +
+                '<button class="menu-action" onclick="openMenu(\'card\')">🪪 Cartão de Treinador</button>' +
+                '<button class="menu-action" onclick="openMenu(\'help\')">❓ Manual de campo</button>' +
+            '</div>' +
+        '</div>';
+        html += '<div class="menu-note">A Mochila guarda itens de cura, evolução e chaves. Arraste itens curativos para os atalhos 1-9.</div>';
+    }
+    setMenu('Mochila', html, false);
+}
+
+function setBagTab(tab) {
+    bagTab = tab;
+    renderBagMenu();
+}
+
+function countEvolutionTargets(itemId) {
+    return (player.team || []).filter(mon => {
+        const base = getFolkmomById(mon.id) || mon.baseData;
+        return base && base.evoType === 'item' && base.evoItem === itemId && base.evoTo && base.evoTo.length;
+    }).length;
+}
+
+function useHealingItemOutside(itemId) {
+    const item = ITEMS[itemId];
+    if(!item || item.effect !== 'heal' || !player.items[itemId] || player.items[itemId] <= 0) {
+        showToast('Você não tem esse item.', 'error');
+        return;
+    }
+    const target = (player.team || []).find(mon => mon.hp < mon.maxHp);
+    if(!target) {
+        showToast('Todos os Folkmons estão com PV cheio.', 'info');
+        return;
+    }
+    const amount = item.value >= 999 ? target.maxHp : item.value;
+    const before = target.hp;
+    target.hp = Math.min(target.maxHp, target.hp + amount);
+    player.items[itemId]--;
+    const healed = target.hp - before;
+    addChatMessage('Equipe', target.name + ' recuperou ' + healed + ' PV com ' + item.name + '.', 'system');
+    showToast(target.name + ' recuperou ' + healed + ' PV!', 'success');
+    saveGame();
+    updatePartyBar(true);
+    renderHotbar();
+    if(isMenuOpen() && currentMenuType === 'items') renderBagMenu();
+}
+
+function useEvolutionItem(itemId) {
+    const item = EVO_ITEMS[itemId];
+    if(!item || !player.evoItems[itemId] || player.evoItems[itemId] <= 0) return;
+    const mon = (player.team || []).find(m => {
+        const base = getFolkmomById(m.id) || m.baseData;
+        return base && base.evoType === 'item' && base.evoItem === itemId && base.evoTo && base.evoTo.length;
+    });
+    if(!mon) {
+        showToast('Nenhum Folkmom do time usa ' + item.name + '.', 'error');
+        return;
+    }
+    const base = getFolkmomById(mon.id) || mon.baseData;
+    if(!evolveMonster(mon, base.evoTo[0], 'item')) return;
+    player.evoItems[itemId]--;
+    saveGame();
+    updatePartyBar(true);
+    refreshFollower();
+    renderHotbar();
+    if(isMenuOpen()) openSummary(player.team.indexOf(mon));
+}
+
+function renderTradesMenu() {
+    const pairs = [
+        ['FM011', 'FM012'],
+        ['FM013', 'FM014'],
+        ['FM015', 'FM016'],
+        ['FM017', 'FM018'],
+        ['FM019', 'FM020']
+    ];
+    let html = '<p>Existem 10 Folkmons que evoluem por troca. Tenha o par correto no time e realize a troca.</p>';
+    pairs.forEach(pair => {
+        const a = getFolkmomById(pair[0]);
+        const b = getFolkmomById(pair[1]);
+        if(!a || !b) return;
+        const hasA = (player.team || []).some(m => m.id === pair[0]);
+        const hasB = (player.team || []).some(m => m.id === pair[1]);
+        const ready = hasA && hasB;
+        html += '<div class="team-slot' + (ready ? ' selected' : '') + '">' +
+            '<div class="monster-sprite">' + (ready ? '🔁' : '⏳') + '</div>' +
+            '<div class="monster-info">' +
+                '<strong>' + a.name + '</strong> + <strong>' + b.name + '</strong><br>' +
+                '<small>→ ' + monName(a.evoTo && a.evoTo[0]) + ' + ' + monName(b.evoTo && b.evoTo[0]) + '</small><br>' +
+                '<small style="color:' + (ready ? '#4ade80' : '#94a3b8') + '">' + (ready ? 'Par pronto no time!' : 'Falta um dos dois no time.') + '</small>' +
+            '</div>' +
+        '</div>';
+    });
+    html += '<button class="menu-action" onclick="doTradeMenu()" style="width:100%;margin-top:8px;">🔁 Realizar troca (se tiver par)</button>' +
+        '<p id="tradeMsg" class="msg" style="text-align:left;font-size:10px;"></p>' +
+        '<div class="menu-note">A troca evolui os dois Folkmons e conta para o Folclorédex. Trocas online entre jogadores chegam com a conta na nuvem.</div>';
+    setMenu('Trocas de Evolução', html, true);
+}
+
+function renderPhoneMenu() {
+    const percent = Math.max(0, Math.min(150, currentScanPercent || 0));
+    let status = 'Pronto';
+    if(scanInterval) status = 'Escaneando...';
+    else if(percent >= 100) status = 'Scan completo! Pode consertar';
+    else if(percent > 0) status = 'Scan parcial';
+    const statusColor = percent >= 100 ? '#4ade80' : scanInterval ? '#facc15' : '#e2e8f0';
+    let html = '<h3>Scan para capturar Folkmons</h3>' +
+        '<p>Use o celular para escanear a área. Quanto maior o percentual, maior a chance de encontrar e capturar um Folkmom.</p>' +
+        '<div style="text-align:center;padding:24px;background:linear-gradient(135deg,#1e293b 0%,#0f172a 60%,#422006 100%);border:1px solid rgba(250,204,21,.35);border-radius:12px;margin:14px 0;color:white;">' +
+            '<div style="font-size:64px;line-height:1;">📱</div>' +
+            '<div style="margin-top:8px;font-size:26px;color:#facc15;"><strong id="scanPercent">' + percent + '%</strong></div>' +
+            '<div style="margin-top:4px;font-size:11px;color:' + statusColor + ';">Status: <span id="scanStatus">' + status + '</span></div>' +
+        '</div>' +
+        '<div class="menu-grid-2">' +
+            '<button class="menu-action" onclick="startScan()">📡 Iniciar Scan</button>' +
+            '<button class="menu-action" onclick="fixScan()">🔧 Consertar Scan (100%+)</button>' +
+        '</div>' +
+        '<p id="phoneMsg" class="msg" style="text-align:left;font-size:11px;margin-top:8px;"></p>' +
+        '<div class="menu-note">Dica: abra o Scanner com a tecla <b>E</b>. O Scan é a forma de capturar Folkmons neste mundo.</div>';
+    setMenu('Scanner Folclórico', html, false);
+}
+
+function renderGameMenu() {
+    const chatOn = player.settings ? player.settings.chat !== false : true;
+    const hotbarOn = player.settings ? player.settings.hotbar !== false : true;
+    let html = '<div class="menu-section"><div class="menu-section-title">Jogo</div><div class="menu-grid-2">' +
+        '<button class="menu-action" onclick="openMenu(\'card\')">🪪 Cartão de Treinador</button>' +
+        '<button class="menu-action" onclick="openMenu(\'items\')">🎒 Mochila</button>' +
+        '<button class="menu-action" onclick="openMenu(\'team\')">🐾 Meu time</button>' +
+        '<button class="menu-action" onclick="openMenu(\'trades\')">🔁 Trocas</button>' +
+        '<button class="menu-action" onclick="manualSave()">💾 Salvar agora</button>' +
+        '<button class="menu-action" onclick="toggleFullscreen()">⛶ Tela cheia</button>' +
+    '</div></div>';
+
+    html += '<div class="menu-section"><div class="menu-section-title">Interface</div><div class="menu-grid-2">' +
+        '<button class="menu-action" onclick="toggleHUDPanel(\'chat\')">💬 Chat: <b style="color:' + (chatOn ? '#4ade80' : '#f87171') + '">' + (chatOn ? 'ligado' : 'desligado') + '</b></button>' +
+        '<button class="menu-action" onclick="toggleHUDPanel(\'hotbar\')">⌨️ Atalhos: <b style="color:' + (hotbarOn ? '#4ade80' : '#f87171') + '">' + (hotbarOn ? 'ligado' : 'desligado') + '</b></button>' +
+    '</div></div>';
+
+    html += '<div class="menu-section"><div class="menu-section-title">Conta</div><div class="menu-grid-2">' +
+        '<button class="menu-action" onclick="openChangePassword()">🔐 Trocar senha</button>' +
+        '<button class="menu-action danger" onclick="confirmLogout()">🚪 Sair da conta</button>' +
+    '</div></div>';
+    html += '<div class="menu-note">Mods: nenhum instalado. O cliente Folkmons usa sprites locais e não requer mods. ' +
+        (CLOUD_ENABLED ? 'Sessão na nuvem ativa.' : 'Conta local: os dados ficam neste navegador.') + '</div>';
+    setMenu('Menu do Jogo', html, false);
+}
+
+function toggleHUDPanel(name) {
+    const element = document.getElementById(name === 'chat' ? 'chatPanel' : 'hotbar');
+    if(!element) return;
+    const nowHidden = element.classList.toggle('hidden');
+    if(!player.settings) player.settings = { chat: true, hotbar: true };
+    player.settings[name] = !nowHidden;
+    saveGame();
+    if(currentMenuType === 'game' && isMenuOpen()) renderGameMenu();
+}
+
+function applyHUDVisibility() {
+    if(!player.settings) player.settings = { chat: true, hotbar: true };
+    const chat = document.getElementById('chatPanel');
+    const hotbar = document.getElementById('hotbar');
+    if(chat) chat.classList.toggle('hidden', player.settings.chat === false);
+    if(hotbar) hotbar.classList.toggle('hidden', player.settings.hotbar === false);
+}
+
+function manualSave() {
+    saveGame();
+    showToast('Jogo salvo!', 'success');
+    addChatMessage('Local', 'Progresso salvo.', 'system');
+}
+
+function confirmLogout() {
+    if(window.confirm('Sair da conta? O progresso será salvo.')) logout();
+}
+
+function toggleFullscreen() {
+    const target = document.documentElement;
+    if(!document.fullscreenElement) {
+        if(target.requestFullscreen) target.requestFullscreen().catch(() => {});
+    } else if(document.exitFullscreen) {
+        document.exitFullscreen();
+    }
+}
+
+// ===================== CHAT, RELÓGIO E FPS =====================
+function initChatUI() {
+    chatState.active = 'Local';
+    chatState.messages = {};
+    chatState.unread = {};
+    chatState.initialized = true;
+    CHAT_TABS.forEach(tab => {
+        chatState.messages[tab] = [];
+        chatState.unread[tab] = false;
+    });
+
+    const name = (player && player.trainerName) || currentUser || 'Treinador';
+    addChatMessage('Local', 'Bem-vindo(a), ' + name + '! Use WASD/setas para andar e E para abrir o Scanner.', 'system', null, true);
+    addChatMessage('Global', 'Canal global em modo local. A conversa entre jogadores chega com a conta na nuvem.', 'system', null, true);
+    addChatMessage('Comércio', 'O Mercado Folclórico (GTL) tem ofertas locais no menu inferior direito.', 'system', null, true);
+    addChatMessage('Sussurro', 'Nenhuma conversa privada. Use este canal quando a nuvem estiver ativa.', 'system', null, true);
+    addChatMessage('Equipe', 'Seu time aparece no canto superior direito. Clique em um Folkmom para ver sumário, ordem ou seguidor.', 'system', null, true);
+    addChatMessage('Batalha', 'Os registros das batalhas também aparecem neste canal.', 'system', null, true);
+    renderChat();
+}
+
+function addChatMessage(tab, text, type, sender, noUnread) {
+    if(!chatState.messages[tab]) chatState.messages[tab] = [];
+    const messageType = type || 'system';
+    const from = sender || (messageType === 'user'
+        ? ((player && player.trainerName) || currentUser || 'Você')
+        : messageType === 'battle' ? 'Batalha' : 'Sistema');
+    chatState.messages[tab].push({
+        text: String(text == null ? '' : text),
+        type: messageType,
+        from: from,
+        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    });
+    while(chatState.messages[tab].length > 120) chatState.messages[tab].shift();
+    if(!noUnread && tab !== chatState.active) chatState.unread[tab] = true;
+    if(chatState.initialized) renderChat();
+}
+
+function renderChat() {
+    const tabsEl = document.getElementById('chatTabs');
+    const messagesEl = document.getElementById('chatMessages');
+    if(!tabsEl || !messagesEl) return;
+
+    tabsEl.innerHTML = CHAT_TABS.map(tab =>
+        '<button class="chat-tab ' + (tab === chatState.active ? 'active' : '') + '" onclick="switchChatTab(\'' + tab + '\')">' +
+            tab + (chatState.unread[tab] ? '<span class="chat-unread"></span>' : '') +
+        '</button>'
+    ).join('');
+
+    const list = chatState.messages[chatState.active] || [];
+    if(list.length === 0) {
+        messagesEl.innerHTML = '<div class="chat-line system"><span class="chat-from">Sistema:</span> Nenhuma mensagem neste canal.</div>';
+    } else {
+        messagesEl.innerHTML = list.map(message => {
+            const cls = message.type === 'system' ? ' system' : message.type === 'user' ? ' user' : message.type === 'battle' ? ' battle' : '';
+            return '<div class="chat-line' + cls + '">' +
+                '<span class="chat-time">' + message.time + '</span>' +
+                '<span class="chat-from">' + escapeHTML(message.from) + ':</span> ' +
+                escapeHTML(message.text) +
+            '</div>';
+        }).join('');
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    const input = document.getElementById('chatInput');
+    if(input) input.placeholder = 'Falar no canal ' + chatState.active + '...';
+}
+
+function switchChatTab(tab) {
+    if(!CHAT_TABS.includes(tab)) return;
+    chatState.active = tab;
+    chatState.unread[tab] = false;
+    renderChat();
+}
+
+function sendChat() {
+    const input = document.getElementById('chatInput');
+    if(!input) return;
+    const text = input.value.trim();
+    if(!text) return;
+    input.value = '';
+
+    if(text === '/scan') { openMenu('phone'); return; }
+    if(text === '/ajuda' || text === '/help') { openMenu('help'); return; }
+    if(text === '/salvar' || text === '/save') { manualSave(); return; }
+
+    addChatMessage(chatState.active, text, 'user');
+}
+
+function toggleChat() {
+    const panel = document.getElementById('chatPanel');
+    if(!panel) return;
+    const collapsed = panel.classList.toggle('collapsed');
+    const button = panel.querySelector('.chat-toggle');
+    if(button) button.textContent = collapsed ? '+' : '–';
+}
+
+function startPlayTimer() {
+    if(playTimer) return;
+    playTimer = setInterval(() => {
+        if(!currentUser || !player || !player.stats) return;
+        const screen = document.getElementById('gameScreen');
+        if(!screen || screen.style.display === 'none') return;
+        player.stats.playSeconds = (player.stats.playSeconds || 0) + 1;
+    }, 1000);
+}
+
+function startHUDTimer() {
+    if(hudTimer) return;
+    hudTimer = setInterval(updateTopHUD, 1000);
+    updateTopHUD();
+}
+
+function updateTopHUD() {
+    const now = Date.now();
+    if(now - lastTopHudUpdate < 250) return;
+    lastTopHudUpdate = now;
+
+    const locationEl = document.getElementById('hudLocationName');
+    if(locationEl) locationEl.textContent = 'Sertão Folclórico';
+
+    const channelEl = document.getElementById('hudChannel');
+    if(channelEl) channelEl.textContent = 'Canal 1 · ' + (CLOUD_ENABLED ? 'Nuvem' : 'Local');
+
+    const clockEl = document.getElementById('hudClock');
+    if(clockEl) {
+        const elapsed = Math.max(0, (Date.now() - gameSessionStart) / 1000);
+        const worldSeconds = 6 * 3600 + 30 * 60 + Math.floor(elapsed * 12);
+        const daySeconds = ((worldSeconds % 86400) + 86400) % 86400;
+        const hours = String(Math.floor(daySeconds / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((daySeconds % 3600) / 60)).padStart(2, '0');
+        clockEl.textContent = hours + ':' + minutes;
+        clockEl.title = 'Relógio do mundo acelerado';
+    }
+
+    const pingEl = document.getElementById('hudPing');
+    if(pingEl) {
+        pingEl.textContent = CLOUD_ENABLED ? 'nuvem' : '0 ms';
+        pingEl.title = CLOUD_ENABLED ? 'Latência medida pela sessão na nuvem' : 'Modo local: sem servidor';
+    }
+
+    const fpsEl = document.getElementById('hudFps');
+    if(fpsEl && currentFps > 0) fpsEl.textContent = currentFps;
+
+    if(player && typeof player === 'object') {
+        const nameEl = document.getElementById('playerName');
+        if(nameEl) nameEl.textContent = player.trainerName || currentUser || 'Treinador';
+        const levelEl = document.getElementById('playerLevel');
+        if(levelEl) levelEl.textContent = player.level || 1;
+        const moneyEl = document.getElementById('playerMoney');
+        if(moneyEl) moneyEl.textContent = formatNumber(player.money || 0);
+    }
+}
+
+function showToast(text, type) {
+    const el = document.getElementById('toast');
+    if(!el) return;
+    clearTimeout(toastTimer);
+    el.className = 'toast show ' + (type || 'info');
+    el.textContent = text;
+    el.style.display = 'block';
+    toastTimer = setTimeout(() => {
+        el.classList.remove('show');
+        setTimeout(() => {
+            if(!el.classList.contains('show')) el.style.display = 'none';
+        }, 220);
+    }, 2400);
+}
+
+function hideToast() {
+    const el = document.getElementById('toast');
+    if(!el) return;
+    clearTimeout(toastTimer);
+    el.classList.remove('show');
+    el.style.display = 'none';
+}
+
+// ===================== BARRA DA EQUIPE =====================
+function updatePartyBar(force) {
+    const slots = document.getElementById('partySlots');
+    const count = document.getElementById('partyCount');
+    if(!slots) return;
+
+    const team = (player && Array.isArray(player.team)) ? player.team : [];
+    const signature = team.map(mon => mon ? (mon.id + ':' + mon.level + ':' + mon.hp + ':' + mon.maxHp + ':' + mon.name) : 'empty').join('|') +
+        '|f' + (player ? player.followerIndex : 0);
+    if(!force && signature === lastPartySignature) return;
+    lastPartySignature = signature;
+
+    if(count) count.textContent = team.length + '/6';
+    let html = '';
+    for(let i = 0; i < 6; i++) {
+        const mon = team[i];
+        if(!mon) {
+            html += '<div class="party-slot empty" title="Espaço vazio">+</div>';
+            continue;
+        }
+        const pct = hpPercent(mon);
+        const hpCls = hpClass(mon);
+        const follower = i === (player ? player.followerIndex : -1);
+        html += '<button class="party-slot ' + (follower ? 'follower ' : '') + (mon.hp <= 0 ? 'fainted' : '') + '" ' +
+            'onclick="openPartyMenu(' + i + ')" title="' + escapeHTML(mon.name) + ' Lv.' + mon.level + ' · PV ' + Math.max(0, mon.hp) + '/' + mon.maxHp + '">' +
+            monsterSpriteHTML(mon, 'party-img') +
+            '<span class="party-lv">' + mon.level + '</span>' +
+            '<span class="party-hp"><i class="' + hpCls + '" style="width:' + pct + '%"></i></span>' +
+        '</button>';
+    }
+    slots.innerHTML = html;
+}
+
+function openPartyMenu(index) {
+    const mon = player && player.team && player.team[index];
+    if(!mon) {
+        openMenu('team');
+        return;
+    }
+    partySelectedIndex = index;
+    const context = document.getElementById('partyContext');
+    const nameEl = document.getElementById('partyContextName');
+    if(nameEl) nameEl.textContent = mon.name + ' · Lv.' + mon.level;
+    if(context) context.style.display = 'block';
+}
+
+function closePartyMenu() {
+    const context = document.getElementById('partyContext');
+    if(context) context.style.display = 'none';
+}
+
+function partyAction(action) {
+    const index = partySelectedIndex;
+    const mon = player && player.team && player.team[index];
+    if(!mon) { closePartyMenu(); return; }
+    if(action === 'summary') {
+        closePartyMenu();
+        openSummary(index);
+    } else if(action === 'order') {
+        closePartyMenu();
+        openMenu('team');
+    } else if(action === 'follower') {
+        setFollower(index);
+    }
+}
+
+// ===================== ATALHOS 1-9 =====================
+function hotbarSignature() {
+    if(!player || !Array.isArray(player.hotbar)) return '';
+    return player.hotbar.map(id => {
+        if(!id) return '-';
+        return id + ':' + ((player.items && player.items[id]) || (player.evoItems && player.evoItems[id]) || 0);
+    }).join('|');
+}
+
+function renderHotbar(force) {
+    const slots = document.getElementById('hotbarSlots');
+    if(!slots || !player) return;
+    const signature = hotbarSignature();
+    if(!force && signature === lastHotbarSignature) return;
+    lastHotbarSignature = signature;
+
+    let html = '';
+    for(let i = 0; i < 9; i++) {
+        const itemId = player.hotbar && player.hotbar[i];
+        const item = itemId ? ITEMS[itemId] : null;
+        const count = itemId ? ((player.items && player.items[itemId]) || (player.evoItems && player.evoItems[itemId]) || 0) : 0;
+        html += '<button class="hotbar-slot ' + (itemId ? 'assigned ' : '') + '" ' +
+            'onclick="useHotbarSlot(' + i + ')" ' +
+            'oncontextmenu="clearHotbarSlot(event,' + i + ')" ' +
+            'ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ' +
+            'ondragleave="this.classList.remove(\'drag-over\')" ' +
+            'ondrop="dropHotbarItem(event,' + i + ')" ' +
+            'title="' + (item ? escapeHTML(item.name) + ' · ' + count + ' unidade(s)' : 'Atalho vazio — arraste um item da Mochila') + '">' +
+            '<span class="slot-key">' + (i + 1) + '</span>' +
+            '<span class="slot-icon">' + (item ? item.sprite : '+') + '</span>' +
+            (item ? '<span class="slot-count">' + count + '</span>' : '') +
+        '</button>';
+    }
+    slots.innerHTML = html;
+}
+
+function useHotbarSlot(index) {
+    if(!player || !player.hotbar) return;
+    const itemId = player.hotbar[index];
+    if(!itemId) {
+        showToast('Atalho vazio. Arraste um item curativo da Mochila.', 'info');
+        openMenu('items');
+        return;
+    }
+    const item = ITEMS[itemId];
+    if(!item) {
+        showToast('Item desconhecido.', 'error');
+        return;
+    }
+    if(item.effect === 'heal') {
+        useHealingItemOutside(itemId);
+    } else {
+        showToast('Use este item pela Mochila.', 'info');
+    }
+}
+
+function dragItem(event, itemId) {
+    if(!event || !event.dataTransfer) return;
+    event.dataTransfer.setData('text/plain', itemId);
+    event.dataTransfer.effectAllowed = 'copy';
+}
+
+function dropHotbarItem(event, index) {
+    if(event) event.preventDefault();
+    const slot = event && event.currentTarget;
+    if(slot) slot.classList.remove('drag-over');
+    const itemId = event && event.dataTransfer ? event.dataTransfer.getData('text/plain') : '';
+    const item = ITEMS[itemId];
+    if(!item || item.effect !== 'heal') {
+        showToast('Coloque apenas itens curativos nos atalhos.', 'error');
+        return;
+    }
+    if(!player.hotbar) player.hotbar = Array(9).fill(null);
+    player.hotbar[index] = itemId;
+    renderHotbar(true);
+    saveGame();
+    showToast(item.name + ' no atalho ' + (index + 1) + '.', 'success');
+}
+
+function assignItemToHotbar(itemId) {
+    const item = ITEMS[itemId];
+    if(!item || item.effect !== 'heal') return;
+    if(!player.hotbar) player.hotbar = Array(9).fill(null);
+    let index = player.hotbar.findIndex(id => !id);
+    if(index < 0) index = 0;
+    player.hotbar[index] = itemId;
+    renderHotbar(true);
+    saveGame();
+    showToast(item.name + ' no atalho ' + (index + 1) + '.', 'success');
+    addChatMessage('Local', item.name + ' foi colocado no atalho ' + (index + 1) + '.', 'system');
+}
+
+function clearHotbarSlot(event, index) {
+    if(event) event.preventDefault();
+    if(!player || !player.hotbar) return;
+    player.hotbar[index] = null;
+    renderHotbar(true);
+    saveGame();
+    showToast('Atalho ' + (index + 1) + ' limpo.', 'info');
+}
+
+// ===================== FOLCLORÉDEX =====================
+const DEX_ELEMENTS = ['Agua', 'Grama', 'Fogo', 'Eletrico', 'Vento', 'Terra', 'Trevas'];
+
+function dexCounts() {
+    const seen = Object.keys((player.dex && player.dex.seen) || {}).length;
+    const caught = Object.keys((player.dex && player.dex.caught) || {}).length;
+    return { seen, caught, total: ALL_FOLKMONS.length };
+}
+
+function renderDexMenu() {
+    const counts = dexCounts();
+    const pct = counts.total ? Math.round((counts.caught / counts.total) * 100) : 0;
+    let html = '<div class="dex-summary">' +
+        '<div class="dex-stat"><span>Total</span><strong>' + counts.total + '</strong></div>' +
+        '<div class="dex-stat"><span>Vistos</span><strong style="color:#38bdf8">' + counts.seen + '</strong></div>' +
+        '<div class="dex-stat"><span>Capturados</span><strong style="color:#4ade80">' + counts.caught + '</strong></div>' +
+        '<div class="dex-stat"><span>Progresso</span><strong>' + pct + '%</strong></div>' +
+    '</div>' +
+    '<div class="dex-progress"><i style="width:' + pct + '%"></i></div>';
+
+    html += '<div class="menu-toolbar">' +
+        '<input id="dexSearch" type="text" placeholder="Buscar por nome, ID ou folclore..." value="' + escapeHTML(dexFilter.search) + '" oninput="updateDexSearch(this.value)">' +
+        '<select id="dexElement" onchange="updateDexElement(this.value)">' +
+            '<option value="all">Todos os elementos</option>' +
+            DEX_ELEMENTS.map(el => '<option value="' + el + '" ' + (dexFilter.element === el ? 'selected' : '') + '>' + el + '</option>').join('') +
+        '</select>' +
+    '</div>' +
+    '<div class="menu-toolbar">' +
+        '<button class="menu-tab ' + (dexFilter.status === 'all' ? 'active' : '') + '" onclick="dexSetStatus(\'all\')">Todos</button>' +
+        '<button class="menu-tab ' + (dexFilter.status === 'seen' ? 'active' : '') + '" onclick="dexSetStatus(\'seen\')">Vistos</button>' +
+        '<button class="menu-tab ' + (dexFilter.status === 'caught' ? 'active' : '') + '" onclick="dexSetStatus(\'caught\')">Capturados</button>' +
+        '<span id="dexGridCount" style="margin-left:auto;color:#64748b;font-size:9px;"></span>' +
+    '</div>' +
+    '<div id="dexGrid" class="dex-grid"></div>' +
+    '<div class="menu-note">Vistos aparecem em azul; capturados, em verde. Abra um registro para ver atributos, folclore e evolução.</div>';
+    setMenu('Folclorédex', html, true);
+    refreshDexGrid();
+}
+
+function dexMatches(base) {
+    const seen = player.dex && player.dex.seen && player.dex.seen[base.id];
+    const caught = player.dex && player.dex.caught && player.dex.caught[base.id];
+    if(dexFilter.status === 'seen' && !seen) return false;
+    if(dexFilter.status === 'caught' && !caught) return false;
+    if(dexFilter.element !== 'all') {
+        const elements = (base.element || '').split('/').map(e => e.trim());
+        if(!elements.includes(dexFilter.element)) return false;
+    }
+    if(dexFilter.search) {
+        const haystack = [base.id, base.name, base.folklore, base.desc, base.element].join(' ').toLowerCase();
+        if(!haystack.includes(dexFilter.search.toLowerCase())) return false;
+    }
+    return true;
+}
+
+function refreshDexGrid() {
+    const grid = document.getElementById('dexGrid');
+    if(!grid) return;
+    const list = ALL_FOLKMONS.filter(dexMatches);
+    const counter = document.getElementById('dexGridCount');
+    if(counter) counter.textContent = list.length + ' registro(s)';
+    if(list.length === 0) {
+        grid.innerHTML = '<div class="menu-note" style="grid-column:1/-1;">Nenhum Folkmom encontrado com esses filtros.</div>';
+        return;
+    }
+    grid.innerHTML = list.map(base => {
+        const seen = !!(player.dex && player.dex.seen && player.dex.seen[base.id]);
+        const caught = !!(player.dex && player.dex.caught && player.dex.caught[base.id]);
+        const cls = caught ? 'caught' : seen ? 'seen' : '';
+        const element = (base.element || 'Trevas').split('/')[0].trim();
+        return '<div class="dex-card ' + cls + '" onclick="openDexEntry(\'' + base.id + '\')">' +
+            '<span class="dex-id">' + escapeHTML(base.id) + '</span>' +
+            '<span class="dex-check">' + (caught ? '✓' : seen ? '◉' : '?') + '</span>' +
+            '<div class="monster-sprite">' + monsterSpriteHTML(base, 'dex-img') + '</div>' +
+            '<span class="dex-name">' + escapeHTML(base.name) + '</span>' +
+            '<span class="dex-el el-' + elementSlug(element) + '">' + escapeHTML(base.element || '') + '</span>' +
+        '</div>';
+    }).join('');
+}
+
+function updateDexSearch(value) {
+    dexFilter.search = value || '';
+    refreshDexGrid();
+}
+
+function updateDexElement(value) {
+    dexFilter.element = value || 'all';
+    refreshDexGrid();
+}
+
+function dexSetStatus(status) {
+    dexFilter.status = status;
+    renderDexMenu();
+}
+
+function openDexEntry(id) {
+    const base = getFolkmomById(id);
+    if(!base) return;
+    currentMenuType = 'dexEntry';
+    const seen = !!(player.dex && player.dex.seen && player.dex.seen[id]);
+    const caught = !!(player.dex && player.dex.caught && player.dex.caught[id]);
+    const status = caught ? 'Capturado' : seen ? 'Visto' : 'Desconhecido';
+    const statusColor = caught ? '#4ade80' : seen ? '#38bdf8' : '#64748b';
+    const desc = base.desc || ('Folclore: ' + (base.folklore || 'mistério do sertão'));
+    let html = '<div class="team-slot selected">' +
+        '<div class="monster-sprite">' + monsterSpriteHTML(base, 'team-img') + '</div>' +
+        '<div class="monster-info">' +
+            '<strong>' + escapeHTML(base.name) + '</strong> <small>· ' + escapeHTML(base.id) + '</small><br>' +
+            '<small>' + escapeHTML(base.element || '') + ' · ' + escapeHTML(base.folklore || '') + '</small><br>' +
+            '<small style="color:' + statusColor + '">' + status + '</small>' +
+        '</div>' +
+    '</div>';
+    html += '<div class="menu-section"><div class="menu-section-title">Registro</div><p>' + escapeHTML(desc) + '</p>' +
+        '<div class="trainer-stats" style="margin-top:8px;">' +
+            '<div class="stat-row"><span>HP base</span><b>' + (base.baseHp || '?') + '</b></div>' +
+            '<div class="stat-row"><span>Ataque base</span><b>' + (base.baseAtk || '?') + '</b></div>' +
+            '<div class="stat-row"><span>Defesa base</span><b>' + (base.baseDef || '?') + '</b></div>' +
+            '<div class="stat-row"><span>Raridade</span><b>' + escapeHTML(base.rarity || 'comum') + '</b></div>' +
+        '</div>' +
+    '</div>';
+    html += '<div class="menu-section"><div class="menu-section-title">Evolução</div><p>' + escapeHTML(evolutionDescription(base)) + '</p></div>';
+    html += '<div class="menu-grid-2" style="margin-top:12px;">' +
+        '<button class="menu-action" onclick="openMenu(\'dex\')">↩ Voltar ao Folclorédex</button>' +
+        '<button class="menu-action" onclick="closeMenu()">Fechar</button>' +
+    '</div>';
+    setMenu('Folclorédex · ' + base.name, html, false);
+}
+
+// ===================== CARTÃO DE TREINADOR =====================
+function renderTrainerCard() {
+    const stats = player.stats || {};
+    const name = player.trainerName || currentUser || 'Treinador';
+    const teamLevel = Math.max(1, ...(player.team || []).map(m => m.level || 1));
+    let html = '<div class="trainer-card">' +
+        '<div class="trainer-avatar" title="Seu treinador"></div>' +
+        '<div class="trainer-card-main">' +
+            '<div class="trainer-card-name">' + escapeHTML(name) + '</div>' +
+            '<div class="trainer-card-sub">' + (CLOUD_ENABLED ? 'Conta na nuvem · Supabase' : 'Conta local · neste navegador') + ' · Nível de treinador ' + (player.level || 1) + '</div>' +
+            '<div class="trainer-stats">' +
+                '<div class="stat-row"><span>Dinheiro</span><b>$' + formatNumber(player.money || 0) + '</b></div>' +
+                '<div class="stat-row"><span>Pontos de Batalha</span><b>' + formatNumber(stats.bp || 0) + ' BP</b></div>' +
+                '<div class="stat-row"><span>Batalhas vencidas</span><b>' + formatNumber(stats.battlesWon || 0) + '</b></div>' +
+                '<div class="stat-row"><span>Capturados</span><b>' + formatNumber(stats.captures || 0) + '</b></div>' +
+                '<div class="stat-row"><span>Scans</span><b>' + formatNumber(stats.scans || 0) + '</b></div>' +
+                '<div class="stat-row"><span>Evoluções</span><b>' + formatNumber(stats.evolves || 0) + '</b></div>' +
+                '<div class="stat-row"><span>PvP</span><b>' + formatNumber(stats.pvpWins || 0) + 'V / ' + formatNumber(stats.pvpLosses || 0) + 'D</b></div>' +
+                '<div class="stat-row"><span>Tempo de jogo</span><b>' + formatPlayTime(stats.playSeconds || 0) + '</b></div>' +
+            '</div>' +
+        '</div>' +
+    '</div>';
+    html += '<div class="menu-section"><div class="menu-section-title">Insígnias <span>0/8</span></div><div class="badge-row">' +
+        Array.from({ length: 8 }, (_, i) => '<span class="badge-slot" title="Insígnia ' + (i + 1) + ' — em breve">' + (i + 1) + '</span>').join('') +
+    '</div><div class="menu-note">As insígnias serão conquistadas em desafios de líderes de região em uma próxima atualização.</div></div>';
+    html += '<div class="menu-section"><div class="menu-section-title">Equipe <span>' + (player.team || []).length + '/6</span></div>' +
+        '<div class="trainer-stats">' +
+            '<div class="stat-row"><span>Maior nível</span><b>' + teamLevel + '</b></div>' +
+            '<div class="stat-row"><span>Folclorédex</span><b>' + dexCounts().caught + '/' + dexCounts().total + '</b></div>' +
+        '</div></div>';
+    html += '<div class="menu-grid-2" style="margin-top:12px;">' +
+        '<button class="menu-action" onclick="openMenu(\'items\')">🎒 Mochila</button>' +
+        '<button class="menu-action" onclick="openMenu(\'dex\')">📖 Folclorédex</button>' +
+    '</div>';
+    setMenu('Cartão de Treinador', html, true);
+}
+
+// ===================== MERCADO / GTL =====================
+function ensureMarketOffers() {
+    if(marketOffers.length) return;
+    marketOffers = [];
+    const bases = FOLKMONS.main;
+    const healing = ['cura_simples', 'cura_media', 'cura_total'];
+    const evoKeys = Object.keys(EVO_ITEMS);
+    const baseLevel = Math.max(5, (player.team && player.team[0] && player.team[0].level) || 5);
+
+    for(let i = 0; i < 6; i++) {
+        if(i < 4) {
+            const base = bases[Math.floor(Math.random() * bases.length)];
+            const level = Math.max(3, Math.min(60, baseLevel + Math.floor(Math.random() * 7) - 2));
+            const value = (base.baseHp || 40) + (base.baseAtk || 10) + (base.baseDef || 10);
+            marketOffers.push({
+                type: 'mon',
+                id: base.id,
+                level: level,
+                price: Math.round(value * 3 + level * 10)
+            });
+        } else if(i === 4) {
+            const itemId = healing[Math.floor(Math.random() * healing.length)];
+            const item = ITEMS[itemId];
+            marketOffers.push({
+                type: 'item',
+                itemKind: 'heal',
+                id: itemId,
+                count: 1 + Math.floor(Math.random() * 3),
+                price: Math.round((item.value >= 999 ? 160 : item.value) * 2.2)
+            });
+        } else {
+            const itemId = evoKeys[Math.floor(Math.random() * evoKeys.length)];
+            const item = EVO_ITEMS[itemId];
+            marketOffers.push({
+                type: 'item',
+                itemKind: 'evo',
+                id: itemId,
+                count: 1,
+                price: 180 + Math.floor(Math.random() * 100)
+            });
+        }
+    }
+}
+
+function marketSellValue(mon) {
+    const base = getFolkmomById(mon.id) || mon.baseData || {};
+    const value = (base.baseHp || 35) + (base.baseAtk || 10) + (base.baseDef || 10);
+    return Math.max(30, Math.round(value * 2 + (mon.level || 1) * 8));
+}
+
+function renderMarketMenu() {
+    ensureMarketOffers();
+    let html = '<div class="menu-toolbar" style="justify-content:space-between;">' +
+        '<span style="color:#94a3b8;font-size:10px;">Saldo: <b style="color:#facc15;">$' + formatNumber(player.money || 0) + '</b></span>' +
+        '<button class="menu-tab" onclick="refreshMarketOffers()">🔄 Renovar ofertas</button>' +
+    '</div>';
+    html += '<div class="menu-note" style="margin-top:0;margin-bottom:10px;">Mercado local simulado. Compras usam o dinheiro do jogo; o mercado entre jogadores chega com a conta na nuvem.</div>';
+
+    html += '<div class="menu-section-title"><span>Ofertas</span><span>6 disponíveis</span></div>';
+    marketOffers.forEach((offer, index) => {
+        if(offer.type === 'mon') {
+            const base = getFolkmomById(offer.id);
+            if(!base) return;
+            const mon = createFolkmom(offer.id, offer.level);
+            const disabled = (player.money || 0) < offer.price || (player.team || []).length >= 6;
+            html += '<div class="market-offer">' +
+                '<div class="monster-sprite">' + monsterSpriteHTML(mon, 'scan-img') + '</div>' +
+                '<div class="market-offer-info"><strong>' + escapeHTML(base.name) + ' Lv.' + offer.level + '</strong>' +
+                    '<small>' + escapeHTML(base.element) + ' · ' + escapeHTML(base.folklore || '') + ' · ' + escapeHTML(base.rarity || 'comum') + '</small>' +
+                '</div>' +
+                '<div class="market-price">$' + formatNumber(offer.price) + '<small>comprar</small></div>' +
+                '<button class="mini-btn" onclick="buyMarketOffer(' + index + ')" ' + (disabled ? 'disabled' : '') + '>Comprar</button>' +
+            '</div>';
+        } else {
+            const item = offer.itemKind === 'heal' ? ITEMS[offer.id] : EVO_ITEMS[offer.id];
+            if(!item) return;
+            const disabled = (player.money || 0) < offer.price;
+            html += '<div class="market-offer">' +
+                '<div class="monster-sprite" style="font-size:28px;">' + item.sprite + '</div>' +
+                '<div class="market-offer-info"><strong>' + escapeHTML(item.name) + ' x' + offer.count + '</strong>' +
+                    '<small>' + escapeHTML(offer.itemKind === 'heal' ? item.desc : 'Item de evolução') + '</small>' +
+                '</div>' +
+                '<div class="market-price">$' + formatNumber(offer.price) + '<small>comprar</small></div>' +
+                '<button class="mini-btn" onclick="buyMarketOffer(' + index + ')" ' + (disabled ? 'disabled' : '') + '>Comprar</button>' +
+            '</div>';
+        }
+    });
+
+    html += '<div class="menu-section"><div class="menu-section-title"><span>Vender do time</span><span>50% do valor</span></div>';
+    if((player.team || []).length <= 1) {
+        html += '<div class="menu-note">Você precisa manter pelo menos um Folkmom no time.</div>';
+    } else {
+        (player.team || []).forEach((mon, index) => {
+            const value = marketSellValue(mon);
+            html += '<div class="market-offer" style="padding:6px 8px;">' +
+                '<div class="monster-sprite" style="width:36px;height:36px;">' + monsterSpriteHTML(mon, 'scan-img') + '</div>' +
+                '<div class="market-offer-info"><strong>' + escapeHTML(mon.name) + ' Lv.' + mon.level + '</strong><small>' + escapeHTML(mon.element) + '</small></div>' +
+                '<div class="market-price">$' + formatNumber(value) + '</div>' +
+                '<button class="mini-btn danger" onclick="sellFolkmom(' + index + ')">Vender</button>' +
+            '</div>';
+        });
+    }
+    html += '</div>';
+    setMenu('Mercado Folclórico (GTL)', html, true);
+}
+
+function buyMarketOffer(index) {
+    const offer = marketOffers[index];
+    if(!offer) return;
+    if((player.money || 0) < offer.price) {
+        showToast('Dinheiro insuficiente.', 'error');
+        return;
+    }
+    if(offer.type === 'mon') {
+        if((player.team || []).length >= 6) {
+            showToast('Time cheio (6/6).', 'error');
+            return;
+        }
+        const mon = createFolkmom(offer.id, offer.level);
+        if(!mon) return;
+        player.money -= offer.price;
+        player.team.push(mon);
+        markDexCaught(mon.id);
+        addChatMessage('Comércio', 'Compra realizada: ' + mon.name + ' Lv.' + mon.level + ' por $' + formatNumber(offer.price) + '.', 'system');
+        showToast(mon.name + ' entrou no time!', 'success');
+        updatePartyBar(true);
+        refreshFollower();
+    } else if(offer.itemKind === 'heal') {
+        player.money -= offer.price;
+        player.items[offer.id] = (player.items[offer.id] || 0) + offer.count;
+        addChatMessage('Comércio', 'Compra realizada: ' + ITEMS[offer.id].name + ' x' + offer.count + '.', 'system');
+        showToast(ITEMS[offer.id].name + ' x' + offer.count + ' comprado!', 'success');
+        renderHotbar();
+    } else {
+        player.money -= offer.price;
+        player.evoItems[offer.id] = (player.evoItems[offer.id] || 0) + offer.count;
+        addChatMessage('Comércio', 'Compra realizada: ' + EVO_ITEMS[offer.id].name + '.', 'system');
+        showToast(EVO_ITEMS[offer.id].name + ' comprado!', 'success');
+    }
+    marketOffers.splice(index, 1);
+    updateHUD();
+    saveGame();
+    renderMarketMenu();
+}
+
+function sellFolkmom(index) {
+    if((player.team || []).length <= 1) {
+        showToast('Você precisa manter pelo menos um Folkmom.', 'error');
+        return;
+    }
+    const mon = player.team[index];
+    if(!mon) return;
+    const value = marketSellValue(mon);
+    if(!window.confirm('Vender ' + mon.name + ' Lv.' + mon.level + ' por $' + value + '?')) return;
+    player.money = (player.money || 0) + value;
+    player.team.splice(index, 1);
+    if(player.followerIndex >= player.team.length) player.followerIndex = 0;
+    markDexCaught(mon.id);
+    addChatMessage('Comércio', 'Venda realizada: ' + mon.name + ' por $' + formatNumber(value) + '.', 'system');
+    showToast(mon.name + ' vendido por $' + formatNumber(value) + '!', 'success');
+    refreshFollower();
+    updatePartyBar(true);
+    renderHotbar();
+    updateHUD();
+    saveGame();
+    renderMarketMenu();
+}
+
+function refreshMarketOffers() {
+    marketOffers = [];
+    ensureMarketOffers();
+    renderMarketMenu();
+    showToast('Ofertas renovadas.', 'info');
+}
+
+// ===================== ARENA PVP =====================
+const PVP_RANKING = [
+    { name: 'Curupira', rating: 1210 },
+    { name: 'Iara', rating: 1160 },
+    { name: 'Boitatá', rating: 1105 },
+    { name: 'Saci', rating: 1060 },
+    { name: 'Cuca', rating: 1020 },
+    { name: 'Anhangá', rating: 985 },
+    { name: 'Mula', rating: 940 },
+    { name: 'Boto', rating: 900 }
+];
+
+function renderPvpMenu() {
+    const stats = player.stats || {};
+    const rating = stats.pvpRating || 1000;
+    const rows = PVP_RANKING.concat([{ name: player.trainerName || currentUser || 'Você', rating: rating, you: true }])
+        .sort((a, b) => b.rating - a.rating);
+    let html = '<div class="pvp-box">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<div><div style="color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:.08em;">Seu rating</div>' +
+            '<div class="pvp-rating">' + rating + '</div></div>' +
+            '<div style="text-align:right;color:#94a3b8;font-size:9px;line-height:1.6;">' +
+                '<div><b style="color:#4ade80;">' + formatNumber(stats.pvpWins || 0) + '</b> vitórias</div>' +
+                '<div><b style="color:#f87171;">' + formatNumber(stats.pvpLosses || 0) + '</b> derrotas</div>' +
+                '<div><b style="color:#facc15;">' + formatNumber(stats.bp || 0) + '</b> BP</div>' +
+            '</div>' +
+        '</div>' +
+    '</div>';
+    html += '<div class="menu-note">Duelo local 1v1 contra treinadores simulados. A fila online e os torneios chegam com a conta na nuvem.</div>';
+    html += '<button class="menu-action" style="width:100%;margin-top:10px;" onclick="startPvpBattle()">⚔️ Procurar duelo local</button>';
+    html += '<div class="menu-section"><div class="menu-section-title">Ranking local</div><div class="pvp-ranking">';
+    rows.forEach((row, index) => {
+        html += '<div class="ranking-row ' + (row.you ? 'you' : '') + '">' +
+            '<span>#' + (index + 1) + ' ' + escapeHTML(row.name) + (row.you ? ' (você)' : '') + '</span>' +
+            '<b>' + row.rating + '</b>' +
+        '</div>';
+    });
+    html += '</div></div>';
+    setMenu('Arena PvP', html, false);
+}
+
+function startPvpBattle() {
+    if(!player.team || player.team.length === 0) {
+        showToast('Monte um time antes de duelar.', 'error');
+        return;
+    }
+    const healthy = player.team.find(mon => mon.hp > 0);
+    if(!healthy) {
+        showToast('Seu time está sem PV. Use itens curativos.', 'error');
+        return;
+    }
+    const bases = FOLKMONS.main;
+    const base = bases[Math.floor(Math.random() * bases.length)];
+    const playerLevel = healthy.level || 5;
+    const level = Math.max(3, playerLevel + Math.floor(Math.random() * 3) - 1);
+    const enemy = createFolkmom(base.id, level);
+    closeMenu();
+    startBattleScan(enemy, { isScan: false, kind: 'pvp' });
+}
+
+function recordPvpWin() {
+    if(!player.stats) player.stats = {};
+    player.stats.pvpWins = (player.stats.pvpWins || 0) + 1;
+    player.stats.pvpRating = Math.max(0, (player.stats.pvpRating || 1000) + 18);
+    player.stats.bp = (player.stats.bp || 0) + 12;
+    addChatMessage('Batalha', 'Duelo PvP vencido! Rating +18 e +12 BP.', 'battle');
+}
+
+function recordPvpLoss() {
+    if(!player.stats) player.stats = {};
+    player.stats.pvpLosses = (player.stats.pvpLosses || 0) + 1;
+    player.stats.pvpRating = Math.max(0, (player.stats.pvpRating || 1000) - 12);
+    addChatMessage('Batalha', 'Duelo PvP perdido. Rating -12.', 'battle');
+}
+
+// ===================== COMUNIDADE / SOCIAL =====================
+function friendCode() {
+    const source = (player.trainerName || currentUser || 'folkmons').toLowerCase();
+    let hash = 0;
+    for(let i = 0; i < source.length; i++) hash = ((hash << 5) - hash) + source.charCodeAt(i);
+    const code = Math.abs(hash).toString(36).toUpperCase().slice(0, 6).padStart(6, '0');
+    return 'FLK-' + code;
+}
+
+function renderSocialMenu() {
+    let html = '<div class="menu-section"><div class="menu-section-title">Lista de amigos</div>' +
+        '<p style="color:#94a3b8;font-size:10px;">Seu código de treinador:</p>' +
+        '<div class="social-code">' + friendCode() + '</div>' +
+        '<div class="menu-toolbar"><input id="friendInput" type="text" maxlength="20" placeholder="Nome de um amigo...">' +
+        '<button class="menu-tab" onclick="addFriend()">Adicionar</button></div>';
+    if(!player.friends || player.friends.length === 0) {
+        html += '<div class="menu-note">Nenhum amigo adicionado. No modo local, a lista é apenas um caderno de nomes; a conexão real chega com a nuvem.</div>';
+    } else {
+        player.friends.forEach((friend, index) => {
+            html += '<div class="friend-row"><span>' + escapeHTML(friend) + '</span>' +
+                '<button class="mini-btn danger" onclick="removeFriend(' + index + ')">Remover</button></div>';
+        });
+    }
+    html += '</div>';
+
+    html += '<div class="menu-section"><div class="menu-section-title">Guilda / Time</div>';
+    if(player.guild) {
+        html += '<div class="social-card"><div class="social-card-info"><strong>' + escapeHTML(player.guild) + '</strong><small>Guilda local · 1 membro</small></div>' +
+            '<button class="mini-btn danger" onclick="leaveGuild()">Sair</button></div>';
+    } else {
+        html += '<div class="menu-toolbar"><input id="guildInput" type="text" maxlength="24" placeholder="Nome da guilda...">' +
+            '<button class="menu-tab" onclick="createGuild()">Criar guilda</button></div>';
+    }
+    html += '</div>';
+
+    html += '<div class="menu-section"><div class="menu-section-title">Correio</div>' +
+        '<div class="social-card"><div class="social-card-info"><strong>Boas-vindas ao Folkmons</strong><small>Sistema · A aventura começa no Sertão Folclórico.</small></div></div>' +
+        '<div class="social-card"><div class="social-card-info"><strong>Atualização da HUD</strong><small>Sistema · Menu no estilo cliente de MMO, chat, equipe e atalhos.</small></div></div>' +
+        '<div class="social-card"><div class="social-card-info"><strong>Conta na nuvem</strong><small>Sistema · Quando ativada, seus dados sincronizam entre dispositivos.</small></div></div>' +
+    '</div>';
+
+    html += '<div class="menu-section"><div class="menu-section-title">Trocas</div>' +
+        '<button class="menu-action" onclick="openMenu(\'trades\')">🔁 Trocas de evolução</button></div>';
+    html += '<div class="menu-note">Amigos, guilda e correio entre jogadores serão online com a conta na nuvem. Por enquanto, tudo fica salvo localmente.</div>';
+    setMenu('Comunidade', html, true);
+}
+
+function addFriend() {
+    const input = document.getElementById('friendInput');
+    if(!input) return;
+    const name = input.value.trim();
+    if(name.length < 2) {
+        showToast('Digite um nome com pelo menos 2 caracteres.', 'error');
+        return;
+    }
+    if(!player.friends) player.friends = [];
+    if(player.friends.includes(name)) {
+        showToast('Esse nome já está na lista.', 'info');
+        return;
+    }
+    player.friends.push(name);
+    saveGame();
+    renderSocialMenu();
+    showToast(name + ' adicionado à lista local.', 'success');
+}
+
+function removeFriend(index) {
+    if(!player.friends) return;
+    player.friends.splice(index, 1);
+    saveGame();
+    renderSocialMenu();
+}
+
+function createGuild() {
+    const input = document.getElementById('guildInput');
+    if(!input) return;
+    const name = input.value.trim();
+    if(name.length < 2) {
+        showToast('Digite um nome de guilda válido.', 'error');
+        return;
+    }
+    player.guild = name;
+    saveGame();
+    renderSocialMenu();
+    showToast('Guilda ' + name + ' criada (modo local).', 'success');
+}
+
+function leaveGuild() {
+    if(!player.guild) return;
+    if(!window.confirm('Sair da guilda ' + player.guild + '?')) return;
+    player.guild = '';
+    saveGame();
+    renderSocialMenu();
+}
+
+// ===================== AJUDA =====================
+function renderHelpMenu() {
+    const html = '' +
+        '<details class="help-item" open><summary>⌨️ Controles no mapa</summary><div><b>WASD</b> ou <b>setas</b> movem o treinador. <b>E</b> abre o Scanner. <b>1-9</b> usam os atalhos. <b>Esc</b> fecha menus. O Folkmom seguidor escolhido caminha ao seu lado.</div></details>' +
+        '<details class="help-item"><summary>📱 Como capturar Folkmons</summary><div>Abra o <b>Scanner</b> (botão Scan ou tecla E), inicie o Scan e aguarde passar de 100%. Depois clique em <b>Consertar Scan</b>. Ao encontrar um Folkmom, vença a batalha e escolha <b>Adicionar ao time</b>.</div></details>' +
+        '<details class="help-item"><summary>⚔️ Batalha</summary><div>Escolha <b>Atacar</b> para ver os 4 golpes, <b>Trocar</b> para mudar o Folkmom em campo, <b>Item</b> para curar e <b>Fugir</b> para sair. As barras mostram PV; o log registra dano, vantagens de elemento, EXP, níveis e recompensas. Atalhos: 1-4 golpes, 5 itens, 6 troca, 0 fugir.</div></details>' +
+        '<details class="help-item"><summary>🐾 Equipe e seguidor</summary><div>Clique em um slot no canto superior direito para abrir o submenu com <b>Sumário</b>, <b>Ordem do time</b> e <b>Seguidor</b>. O seguidor aparece no mapa e pode ser trocado a qualquer momento.</div></details>' +
+        '<details class="help-item"><summary>🎒 Mochila, atalhos e evolução</summary><div>A Mochila tem abas de cura, evolução e chaves. Arraste itens curativos para os atalhos 1-9 ou use o botão <b>→ Atalho</b>. Itens de evolução evoluem Folkmons compatíveis do time. Alguns Folkmons também evoluem por nível ou troca.</div></details>' +
+        '<details class="help-item"><summary>📖 Folclorédex, Mercado e PvP</summary><div>O <b>Folclorédex</b> registra vistos e capturados. O <b>Mercado (GTL)</b> permite comprar e vender Folkmons e itens com dinheiro do jogo. A <b>Arena PvP</b> oferece duelos locais 1v1 e ranking; o online chega com a nuvem.</div></details>' +
+        '<details class="help-item"><summary>☁️ Conta, nuvem e senha</summary><div>O jogo funciona com conta local neste navegador. Quando o Supabase estiver ativado, o login por e-mail sincroniza o save na nuvem. A troca de senha fica no <b>Menu do Jogo</b>. Nunca compartilhe a chave <b>service_role</b>; apenas a chave pública anon pode ficar no site.</div></details>' +
+        '<details class="help-item"><summary>🎨 Sprites e folclore</summary><div>Os sprites usam fundo chroma verde e serão substituídos/misturados depois. O jogo não usa nomes ou assets de outras franquias de criaturas: todos os Folkmons são inspirados no folclore brasileiro.</div></details>' +
+        '<div class="menu-grid-2" style="margin-top:12px;">' +
+            '<button class="menu-action" onclick="openMenu(\'phone\')">📱 Abrir Scanner</button>' +
+            '<button class="menu-action" onclick="openMenu(\'team\')">🐾 Ver time</button>' +
+        '</div>';
+    setMenu('Ajuda & FAQ', html, false);
+}
+
+// ===================== EVOLUÇÃO =====================
+function evolveMonster(mon, newId, source) {
+    const base = getFolkmomById(newId);
+    if(!mon || !base) return false;
+    const oldName = mon.name;
+    mon.id = base.id;
+    mon.name = base.name;
+    mon.element = base.element;
+    mon.folklore = base.folklore;
+    mon.sprite = base.sprite;
+    mon.baseData = base;
+    mon.maxHp = Math.floor(base.baseHp + mon.level * 2.5);
+    mon.hp = mon.maxHp;
+    mon.atk = Math.floor(base.baseAtk + mon.level * 1.8);
+    mon.def = Math.floor(base.baseDef + mon.level * 1.3);
+    if(!mon.expToNext) mon.expToNext = mon.level * 120;
+    player.stats.evolves = (player.stats.evolves || 0) + 1;
+    markDexCaught(base.id);
+    addChatMessage('Equipe', oldName + ' evoluiu para ' + base.name + '!', 'system');
+    showToast('Evolução! ' + oldName + ' → ' + base.name, 'success');
+    if(currentBattle) {
+        addBattleLog(oldName + ' evoluiu para ' + base.name + '!', 'log-good');
+        renderBattleSprites();
+        updateBattleUI();
+    }
+    refreshFollower();
+    updatePartyBar(true);
+    saveGame();
+    return true;
+}
+
+function checkLevelEvolution(mon) {
+    let guard = 0;
+    while(mon && guard++ < 3) {
+        const base = getFolkmomById(mon.id);
+        if(!base || base.evoType !== 'level' || !base.evoLevel || mon.level < base.evoLevel || !base.evoTo || !base.evoTo.length) break;
+        if(!evolveMonster(mon, base.evoTo[0], 'level')) break;
+    }
 }
 
 let currentScanPercent = 0;
@@ -817,9 +2448,15 @@ function startScan() {
     const msg = document.getElementById('phoneMsg');
     const percentEl = document.getElementById('scanPercent');
     const statusEl = document.getElementById('scanStatus');
+    if(!msg || !percentEl || !statusEl) {
+        renderPhoneMenu();
+        return;
+    }
     currentScanPercent = 0;
     msg.textContent = '';
+    msg.style.color = '';
     statusEl.textContent = 'Escaneando...';
+    addChatMessage('Local', 'Scan iniciado. Mantenha o sinal até 100%.', 'system');
     
     scanInterval = setInterval(() => {
         currentScanPercent += Math.floor(Math.random() * 15) + 5;
@@ -843,33 +2480,45 @@ function fixScan() {
     
     const msg = document.getElementById('phoneMsg');
     const statusEl = document.getElementById('scanStatus');
-    
-    if(currentScanPercent < 100) {
-        msg.style.color = 'red';
-        msg.textContent = 'Scan insuficiente! Necessário >= 100%';
-        statusEl.textContent = 'Falhou';
+    if(!msg || !statusEl) {
+        if(currentScanPercent >= 100) generateScannedFolkmom();
         return;
     }
     
-    msg.style.color = 'blue';
+    if(currentScanPercent < 100) {
+        msg.style.color = '#f87171';
+        msg.textContent = 'Scan insuficiente! Necessário >= 100%';
+        statusEl.textContent = 'Falhou';
+        statusEl.style.color = '#f87171';
+        addChatMessage('Local', 'Falha no Scan: é preciso chegar a 100%.', 'system');
+        return;
+    }
+    
+    msg.style.color = '#38bdf8';
     msg.textContent = 'Consertando sistema de Scan...';
     statusEl.textContent = 'Consertando...';
+    statusEl.style.color = '#38bdf8';
     
     setTimeout(() => {
         const success = Math.random() < 0.8 + (currentScanPercent / 500);
         if(success) {
-            msg.style.color = 'green';
+            msg.style.color = '#4ade80';
             msg.textContent = 'Scan consertado com sucesso!';
             statusEl.textContent = 'Gerando Folkmom...';
+            statusEl.style.color = '#facc15';
+            addChatMessage('Local', 'Scan consertado! Um Folkmom está se materializando...', 'system');
             setTimeout(() => {
                 generateScannedFolkmom();
             }, 1500);
         } else {
-            msg.style.color = 'orange';
+            msg.style.color = '#fb923c';
             msg.textContent = 'Falha ao consertar. Tente novamente com scan maior!';
             statusEl.textContent = 'Erro';
+            statusEl.style.color = '#fb923c';
             currentScanPercent = Math.floor(currentScanPercent * 0.5);
-            document.getElementById('scanPercent').textContent = currentScanPercent + '%';
+            const percentEl = document.getElementById('scanPercent');
+            if(percentEl) percentEl.textContent = currentScanPercent + '%';
+            addChatMessage('Local', 'O Scan falhou. Tente novamente.', 'system');
         }
     }, 2000);
 }
@@ -880,12 +2529,17 @@ function generateScannedFolkmom() {
     const baseFolkmom = FOLKMONS.main[randIdx];
     const wildLevel = Math.floor((player.level || 5) + Math.random() * 4 - 1);
     const wild = createFolkmom(baseFolkmom.id, Math.max(3, wildLevel));
-    
-    document.getElementById('phoneMsg').innerHTML = '<strong style="color:green;">Folkmom escaneado!</strong><br>' +
-        monsterSpriteHTML(wild, 'scan-img') + ' ' + wild.name + ' | ' + wild.element + ' | Lv.' + wild.level + '<br>' +
-        '<em>' + wild.folklore + '</em>';
+    markDexSeen(wild.id);
+    const phoneMsg = document.getElementById('phoneMsg');
+    if(phoneMsg) {
+        phoneMsg.innerHTML = '<strong style="color:#4ade80;">Folkmom escaneado!</strong><br>' +
+            monsterSpriteHTML(wild, 'scan-img') + ' ' + wild.name + ' | ' + wild.element + ' | Lv.' + wild.level + '<br>' +
+            '<em>' + wild.folklore + '</em>';
+    }
     
     player.stats.scans++;
+    addChatMessage('Local', 'Scan concluído: ' + wild.name + ' Lv.' + wild.level + ' (' + wild.element + ').', 'system');
+    showToast('Folkmom detectado: ' + wild.name + '!', 'success');
     saveGame();
     
     setTimeout(() => {
@@ -917,8 +2571,11 @@ function doTradeMenu() {
     }
     
     if(!foundPair) {
-        msg.style.color = 'red';
-        msg.textContent = 'Você precisa ter o par correto de Folkmons para trocar!';
+        if(msg) {
+            msg.style.color = '#f87171';
+            msg.textContent = 'Você precisa ter o par correto de Folkmons para trocar!';
+        }
+        showToast('Falta o par correto no time.', 'error');
         return;
     }
     
@@ -931,17 +2588,29 @@ function doTradeMenu() {
     // Evoluir ambos
     let base1 = getFolkmomById(foundPair[0]);
     if(base1.evoType === 'trade' && base1.evoTo.length > 0) {
-        player.team.push(createFolkmom(base1.evoTo[0], mon1.level));
+        const evolved = createFolkmom(base1.evoTo[0], mon1.level);
+        player.team.push(evolved);
+        markDexCaught(evolved.id);
     }
     let base2 = getFolkmomById(foundPair[1]);
     if(base2.evoType === 'trade' && base2.evoTo.length > 0) {
-        player.team.push(createFolkmom(base2.evoTo[0], mon2.level));
+        const evolved = createFolkmom(base2.evoTo[0], mon2.level);
+        player.team.push(evolved);
+        markDexCaught(evolved.id);
     }
     
-    msg.style.color = 'green';
-    msg.textContent = 'Troca realizada! Ambos evoluíram por troca!';
-    player.stats.evolves += 2;
+    if(msg) {
+        msg.style.color = '#4ade80';
+        msg.textContent = 'Troca realizada! Ambos evoluíram por troca!';
+    }
+    player.stats.evolves = (player.stats.evolves || 0) + 2;
+    if(player.followerIndex >= player.team.length) player.followerIndex = 0;
+    addChatMessage('Equipe', 'Troca concluída! Os dois Folkmons evoluíram.', 'system');
+    showToast('Troca concluída! Ambos evoluíram!', 'success');
+    refreshFollower();
+    updatePartyBar(true);
     saveGame();
+    renderTradesMenu();
 }
 
 // ===================== BATALHA =====================
@@ -1045,27 +2714,48 @@ function calcDamage(attacker, defender, move, atkMod) {
     };
 }
 
-function startBattleScan(enemy) {
-    if(player.team.length === 0) { alert('Sem Folkmons no time!'); return; }
+function startBattleScan(enemy, options) {
+    const opts = options || {};
+    if(!player.team || player.team.length === 0) {
+        showToast('Sem Folkmons no time!', 'error');
+        return;
+    }
     const healthy = player.team.find(m => m.hp > 0);
-    if(!healthy) { alert('Seu time está sem PV! Use um item curativo.'); return; }
+    if(!healthy) {
+        showToast('Seu time está sem PV! Use um item curativo.', 'error');
+        return;
+    }
 
     currentBattle = {
         enemy: enemy,
         playerMonster: healthy,
-        isScan: true,
+        isScan: opts.isScan !== false,
+        kind: opts.kind || 'scan',
         busy: false,
         over: false,
+        lossCounted: false,
         playerAtkMod: 1,
         enemyAtkMod: 1
     };
 
+    markDexSeen(enemy.id);
     document.getElementById('battleScreen').style.display = 'flex';
+    fitBattleScreen();
     document.getElementById('battlePlayerName').style.color = '';
     document.getElementById('battleLog').innerHTML = '';
+    const modeLabel = document.getElementById('battleModeLabel');
+    if(modeLabel) {
+        if(currentBattle.kind === 'pvp') {
+            modeLabel.style.display = 'block';
+            modeLabel.textContent = 'Duelo PvP local · 1v1';
+        } else {
+            modeLabel.style.display = 'none';
+        }
+    }
     renderBattleSprites();
     updateBattleUI();
-    addBattleLog('Um Folkmom selvagem apareceu: ' + enemy.name + ' Lv.' + enemy.level + '!');
+    addBattleLog((currentBattle.kind === 'pvp' ? 'Duelo PvP! ' : 'Um Folkmom selvagem apareceu: ') + enemy.name + ' Lv.' + enemy.level + '!');
+    addChatMessage('Batalha', (currentBattle.kind === 'pvp' ? 'Duelo PvP contra ' : 'Batalha selvagem contra ') + enemy.name + ' Lv.' + enemy.level + '.', 'battle');
     battleMenu('main');
 }
 
@@ -1094,16 +2784,20 @@ function updateBattleUI() {
     document.getElementById('enemyLevel').textContent = eMon.level;
     setHpBar('playerHpBar', 'playerHpText', pMon);
     setHpBar('enemyHpBar', 'enemyHpText', eMon);
+    updatePartyBar();
 }
 
 function addBattleLog(text, cls) {
     const log = document.getElementById('battleLog');
+    if(!log) return;
     const line = document.createElement('div');
     if(cls) line.className = cls;
     line.innerHTML = text;
     log.appendChild(line);
     while(log.children.length > 30) log.removeChild(log.firstChild);
     log.scrollTop = log.scrollHeight;
+    const plain = String(text).replace(/<[^>]*>/g, '');
+    addChatMessage('Batalha', plain, 'battle');
 }
 
 function shakeSprite(id) {
@@ -1125,7 +2819,8 @@ function battleMenu(menu) {
             '<button class="battle-btn" onclick="battleAction(\'attack\')">⚔️ Atacar</button>' +
             '<button class="battle-btn" onclick="battleAction(\'switch\')">🔄 Trocar</button>' +
             '<button class="battle-btn" onclick="battleAction(\'item\')">🎒 Item</button>' +
-            '<button class="battle-btn" onclick="battleAction(\'run\')">🏃 Fugir</button>';
+            '<button class="battle-btn" onclick="battleAction(\'run\')">🏃 Fugir</button>' +
+            '<div class="battle-hotkey-hint">Atalhos: 1–4 golpes · 5 itens · 6 trocar · 0 fugir</div>';
         return;
     }
 
@@ -1289,6 +2984,10 @@ function handlePlayerFaint() {
 
     currentBattle.over = true;
     currentBattle.busy = true;
+    if(currentBattle.kind === 'pvp' && !currentBattle.lossCounted) {
+        currentBattle.lossCounted = true;
+        recordPvpLoss();
+    }
     addBattleLog('Todos os seus Folkmons foram derrotados...', 'log-bad');
     document.getElementById('battleMainActions').innerHTML =
         '<div class="battle-menu-heading">Você perdeu a batalha</div>' +
@@ -1297,8 +2996,9 @@ function handlePlayerFaint() {
 
 function finishBattleLoss() {
     player.team.forEach(m => { m.hp = m.maxHp; });
+    addChatMessage('Batalha', 'Seu time foi curado no centro de descanso.', 'battle');
     closeBattle();
-    alert('Seu time foi curado no centro de descanso. Tente novamente!');
+    showToast('Seu time foi curado. Tente novamente!', 'info');
 }
 
 function handleEnemyFaint() {
@@ -1307,16 +3007,21 @@ function handleEnemyFaint() {
     currentBattle.busy = true;
     const e = currentBattle.enemy;
     const p = currentBattle.playerMonster;
+    const pvp = currentBattle.kind === 'pvp';
 
     addBattleLog(e.name + ' foi derrotado!', 'log-good');
     player.stats.battlesWon = (player.stats.battlesWon || 0) + 1;
+    if(pvp) recordPvpWin();
+    else player.stats.bp = (player.stats.bp || 0) + 5;
     const money = 20 + e.level * 8;
     player.money = (player.money || 0) + money;
     updateHUD();
     gainBattleExp(p, e);
+    updatePartyBar(true);
     saveGame();
 
-    let html = '<div class="battle-menu-heading">Vitória! +' + money + ' moedas</div>';
+    let html = '<div class="battle-menu-heading">Vitória! +' + money + ' moedas' +
+        (pvp ? ' · +12 BP' : ' · +5 BP') + '</div>';
     if(currentBattle.isScan) {
         if(player.team.length < 6) {
             html += '<button class="battle-btn battle-capture" onclick="finishBattleCapture(true)">📥 Adicionar ' + e.name + ' ao time</button>';
@@ -1347,6 +3052,7 @@ function gainBattleExp(mon, enemy) {
         mon.def += 1;
         addBattleLog(mon.name + ' subiu para o nível ' + mon.level + '!', 'log-good');
     }
+    checkLevelEvolution(mon);
     updateBattleUI();
 }
 
@@ -1354,13 +3060,20 @@ function finishBattleCapture(add) {
     if(!currentBattle) return;
     const e = currentBattle.enemy;
     if(add) {
-        if(player.team.length >= 6) { alert('Time cheio! Máximo 6 Folkmons'); return; }
+        if(player.team.length >= 6) {
+            showToast('Time cheio! Máximo 6 Folkmons.', 'error');
+            return;
+        }
         e.hp = e.maxHp;
         e.exp = 0;
         e.expToNext = e.level * 120;
         player.team.push(e);
         player.stats.captures = (player.stats.captures || 0) + 1;
-        alert(e.name + ' foi adicionado ao time!');
+        markDexCaught(e.id);
+        addChatMessage('Equipe', e.name + ' foi adicionado ao time!', 'system');
+        showToast(e.name + ' entrou no time!', 'success');
+        refreshFollower();
+        updatePartyBar(true);
     }
     closeBattle();
 }
@@ -1398,12 +3111,20 @@ function closeBattle() {
     document.getElementById('battleLog').innerHTML = '';
     document.getElementById('battleMainActions').innerHTML = '';
     document.getElementById('battlePlayerName').style.color = '';
+    const modeLabel = document.getElementById('battleModeLabel');
+    if(modeLabel) modeLabel.style.display = 'none';
     currentBattle = null;
     saveGame();
     updateHUD();
+    updatePartyBar(true);
+    refreshFollower();
+    renderHotbar();
 }
 
 setInterval(() => { if(currentUser && document.getElementById('gameScreen').style.display !== 'none') saveGame(); }, 30000);
+window.addEventListener('resize', () => { fitGameClient(); fitBattleScreen(); });
+window.addEventListener('orientationchange', () => { fitGameClient(); fitBattleScreen(); });
+document.addEventListener('fullscreenchange', () => setTimeout(fitGameClient, 60));
 
 // Ajusta a tela de autenticação e tenta reaproveitar a sessão da nuvem.
 applyCloudUI();

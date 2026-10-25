@@ -68,13 +68,14 @@ Se preferir, envie a URL e a chave anon para eu configurar e publicar.
   nunca vê a senha depois do cadastro.
 - **Nome de treinador** e **save do jogo**: ficam em `user_metadata`, na conta
   do usuário. Não é preciso criar tabelas nem configurar RLS.
-- O save inclui time, itens, evoluções, posição no mapa e estatísticas.
+- O save inclui time, itens, evoluções, posição no mapa, estatísticas,
+  Folclorédex, atalhos, seguidor, amigos e guilda local.
 - Os sprites e o código continuam no GitHub Pages; só a conta/save vão para o
   Supabase.
 
 ## Troca e redefinição de senha
 
-- **Logado**: botão **Senha** no topo do jogo. Pede a nova senha e confirma.
+- **Logado**: **Menu do Jogo → Trocar senha** (canto inferior direito). Pede a nova senha e confirma.
 - **Deslogado**: aba **Redefinir Senha** na tela de login. O Supabase envia um
   link para o e-mail cadastrado; o link volta para o jogo e abre a troca de
   senha.

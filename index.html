@@ -53,30 +53,94 @@
         </div>
     </div>
     
-    <div id="gameScreen" class="screen" style="display:none;">
-        <div class="game-header">
-            <div class="header-left">
-                <span id="playerName"></span> | Nível <span id="playerLevel"></span> | $<span id="playerMoney"></span>
-            </div>
-            <div class="header-right">
-                <button onclick="openMenu('team')">Time</button>
-                <button onclick="openMenu('items')">Itens</button>
-                <button onclick="openMenu('trades')">Trocas</button>
-                <button onclick="openMenu('phone')">📱 Celular</button>
-                <button onclick="openChangePassword()">Senha</button>
-                <button onclick="logout()">Sair</button>
+    <div id="gameScreen" class="screen game-screen" style="display:none;">
+        <div class="game-client">
+            <div id="gameContainer" class="game-container">
+                <canvas id="gameMap" width="800" height="600"></canvas>
+
+                <!-- Canto superior esquerdo: localização, relógio, FPS e latência -->
+                <div id="hudTopLeft" class="hud hud-topleft">
+                    <div class="hud-row hud-location-row">
+                        <span class="hud-icon">📍</span>
+                        <div class="hud-location-text">
+                            <strong id="hudLocationName">Sertão Folclórico</strong>
+                            <small id="hudChannel">Canal 1 · Local</small>
+                        </div>
+                    </div>
+                    <div class="hud-row hud-tech-row">
+                        <span title="Relógio do mundo (acelerado)">🕒 <b id="hudClock">06:30</b></span>
+                        <span title="Frames por segundo">FPS <b id="hudFps">--</b></span>
+                        <span title="Latência da conexão">Ping <b id="hudPing">0 ms</b></span>
+                    </div>
+                    <div class="hud-row hud-trainer-row">
+                        <span class="hud-status-dot"></span>
+                        <span id="playerName">Treinador</span>
+                        <span class="hud-sep">·</span> Nv <b id="playerLevel">1</b>
+                        <span class="hud-sep">·</span> $<b id="playerMoney">0</b>
+                    </div>
+                </div>
+
+                <!-- Canto superior direito: barra da equipe -->
+                <div id="partyBar" class="hud hud-topright" aria-label="Time de Folkmons">
+                    <div class="party-header"><span>🐾 EQUIPE</span><span id="partyCount">0/6</span></div>
+                    <div id="partySlots" class="party-slots"></div>
+                </div>
+
+                <!-- Canto inferior esquerdo: chat -->
+                <div id="chatPanel" class="hud hud-bottomleft">
+                    <div class="chat-header">
+                        <div id="chatTabs" class="chat-tabs"></div>
+                        <button class="chat-toggle" onclick="toggleChat()" title="Minimizar/expandir chat">–</button>
+                    </div>
+                    <div id="chatBody" class="chat-body">
+                        <div id="chatMessages" class="chat-messages"></div>
+                        <div class="chat-input-row">
+                            <input id="chatInput" type="text" maxlength="140" placeholder="Falar no canal Local..." autocomplete="off" onkeydown="chatInputKeydown(event)">
+                            <button onclick="sendChat()" title="Enviar mensagem">➤</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canto inferior direito: menus principais -->
+                <div class="hud hud-bottomright">
+                    <div id="menuDock" class="menu-dock">
+                        <button class="dock-btn" onclick="openMenu('game')" title="Menu do Jogo"><span>⚙️</span><small>Menu</small></button>
+                        <button class="dock-btn" onclick="openMenu('items')" title="Mochila"><span>🎒</span><small>Mochila</small></button>
+                        <button class="dock-btn" onclick="openMenu('dex')" title="Folclorédex"><span>📖</span><small>Dex</small></button>
+                        <button class="dock-btn" onclick="openMenu('card')" title="Cartão de Treinador"><span>🪪</span><small>Cartão</small></button>
+                        <button class="dock-btn" onclick="openMenu('market')" title="Mercado Folclórico (GTL)"><span>🛒</span><small>GTL</small></button>
+                        <button class="dock-btn" onclick="openMenu('pvp')" title="Arena PvP"><span>⚔️</span><small>PvP</small></button>
+                        <button class="dock-btn" onclick="openMenu('social')" title="Comunidade, amigos, guilda e trocas"><span>👥</span><small>Social</small></button>
+                        <button class="dock-btn" onclick="openMenu('help')" title="Ajuda e perguntas frequentes"><span>❓</span><small>Ajuda</small></button>
+                    </div>
+                </div>
+
+                <!-- Centro inferior: atalhos rápidos 1-9 -->
+                <div id="hotbar" class="hud hud-bottomcenter">
+                    <div class="hotbar-head"><span>ATALHOS</span><span>1–9</span></div>
+                    <div id="hotbarSlots" class="hotbar-slots"></div>
+                </div>
+
+                <!-- Ação principal do jogo -->
+                <button id="scanFab" class="scan-fab" onclick="openMenu('phone')" title="Abrir o Scanner (E)">📱 <span>Scan</span></button>
+
+                <!-- Submenu da equipe -->
+                <div id="partyContext" class="party-context" style="display:none;">
+                    <div class="party-context-head">
+                        <strong id="partyContextName">Folkmom</strong>
+                        <button onclick="closePartyMenu()" class="context-close">✕</button>
+                    </div>
+                    <button onclick="partyAction('summary')">📋 Sumário</button>
+                    <button onclick="partyAction('order')">↕️ Ordem do time</button>
+                    <button onclick="partyAction('follower')">🐾 Seguir no mapa</button>
+                </div>
+
+                <div id="toast" class="toast" style="display:none;"></div>
             </div>
         </div>
-        
-        <div class="game-container">
-            <canvas id="gameMap" width="800" height="600"></canvas>
-            <div class="game-ui">
-                <div id="locationInfo"><strong>Região:</strong> Sertão Folclórico</div>
-            </div>
-        </div>
-        
+
         <div id="menuOverlay" class="overlay" style="display:none;">
-            <div class="menu-box">
+            <div id="menuBox" class="menu-box">
                 <div class="menu-header">
                     <h2 id="menuTitle">Menu</h2>
                     <button onclick="closeMenu()">X</button>
@@ -123,6 +187,7 @@
                     <div id="battleMainActions"></div>
                     <div id="battleLog" class="battle-log"></div>
                 </div>
+                <div id="battleModeLabel" class="battle-mode-label" style="display:none;"></div>
             </div>
         </div>
     </div>
