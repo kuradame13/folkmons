@@ -155,6 +155,14 @@ function applyCloudUI() {
 }
 
 function enterGame(displayName) {
+    currentBattle = null;
+    const battleScreen = document.getElementById('battleScreen');
+    if(battleScreen) battleScreen.style.display = 'none';
+    const menuOverlay = document.getElementById('menuOverlay');
+    if(menuOverlay) menuOverlay.style.display = 'none';
+    const passwordOverlay = document.getElementById('passwordOverlay');
+    if(passwordOverlay) passwordOverlay.style.display = 'none';
+
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('gameScreen').style.display = 'flex';
     document.getElementById('playerName').textContent = displayName || 'Treinador';
@@ -417,6 +425,26 @@ async function logout() {
     }
     currentUser = null;
     keys = {};
+    currentBattle = null;
+    if(scanInterval) {
+        clearInterval(scanInterval);
+        scanInterval = null;
+    }
+    currentScanPercent = 0;
+    const scanPercent = document.getElementById('scanPercent');
+    if(scanPercent) scanPercent.textContent = '0%';
+    const scanStatus = document.getElementById('scanStatus');
+    if(scanStatus) scanStatus.textContent = 'Pronto';
+
+    const battleScreen = document.getElementById('battleScreen');
+    if(battleScreen) battleScreen.style.display = 'none';
+    const battleLog = document.getElementById('battleLog');
+    if(battleLog) battleLog.innerHTML = '';
+    const battleActions = document.getElementById('battleMainActions');
+    if(battleActions) battleActions.innerHTML = '';
+    const menuOverlay = document.getElementById('menuOverlay');
+    if(menuOverlay) menuOverlay.style.display = 'none';
+
     document.getElementById('gameScreen').style.display = 'none';
     document.getElementById('authScreen').style.display = 'flex';
     document.getElementById('passwordOverlay').style.display = 'none';
