@@ -33,7 +33,14 @@ let hudTimer = null;
 let touchControlsEnabled = false;
 let touchControlsReady = false;
 let touchVector = { x: 0, y: 0 };
-let stickPointerId = null;
+const touchPointers = new Map();
+const TOUCH_DIRECTION_VECTORS = {
+    up: { x: 0, y: -1 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 }
+};
+const TOUCH_CONTROLS_VERSION = 2;
 
 // All folkmons flattened
 let ALL_FOLKMONS = [];
@@ -255,7 +262,11 @@ function normalizePlayer() {
     player.guild = typeof player.guild === 'string' ? player.guild : '';
     player.trainerName = typeof player.trainerName === 'string' ? player.trainerName : '';
     player.settings = Object.assign({ chat: true, hotbar: true }, player.settings || {});
-    if(typeof player.settings.touchControls !== 'boolean') player.settings.touchControls = isTouchCapable();
+    if(typeof player.settings.touchControls !== 'boolean' ||
+        (isTouchCapable() && Number(player.settings.touchControlsVersion || 0) < TOUCH_CONTROLS_VERSION)) {
+        player.settings.touchControls = isTouchCapable();
+        player.settings.touchControlsVersion = TOUCH_CONTROLS_VERSION;
+    }
     if(!player.pos) player.pos = { x: 400, y: 300 };
 
     // Saves antigos não tinham Enciclore. O time atual conta como visto/capturado.
@@ -678,7 +689,7 @@ async function logout() {
     const menuOverlay = document.getElementById('menuOverlay');
     if(menuOverlay) menuOverlay.style.display = 'none';
     cancelToast();
-    resetTouchStick();
+    resetTouchDirections();
 
     chatState.active = 'Local';
     chatState.messages = {};
@@ -799,90 +810,148 @@ function applyTouchControls(enabled) {
         box.classList.toggle('active', touchControlsEnabled);
         box.setAttribute('aria-hidden', touchControlsEnabled ? 'false' : 'true');
     }
-    if(!touchControlsEnabled) resetTouchStick();
+    if(!touchControlsEnabled) resetTouchDirections();
 }
 
 function toggleTouchControls() {
     if(!player) return;
     if(!player.settings) player.settings = { chat: true, hotbar: true };
     player.settings.touchControls = !touchControlsEnabled;
+    player.settings.touchControlsVersion = TOUCH_CONTROLS_VERSION;
     applyTouchControls(player.settings.touchControls);
     saveGame();
     if(currentMenuType === 'game' && isMenuOpen()) renderGameMenu();
 }
 
-function resetTouchStick() {
+function updateTouchDirectionState() {
+    const activeDirs = new Set(touchPointers.values());
+    let x = 0;
+    let y = 0;
+    activeDirs.forEach(dir => {
+        const vector = TOUCH_DIRECTION_VECTORS[dir];
+        if(!vector) return;
+        x += vector.x;
+        y += vector.y;
+    });
+    touchVector.x = Math.max(-1, Math.min(1, x));
+    touchVector.y = Math.max(-1, Math.min(1, y));
+    document.querySelectorAll('#touchDpad .dpad-btn').forEach(btn => {
+        btn.classList.toggle('pressed', activeDirs.has(btn.getAttribute('data-dir')));
+    });
+}
+
+function resetTouchDirections() {
+    const pointerIds = Array.from(touchPointers.keys());
+    document.querySelectorAll('#touchDpad .dpad-btn').forEach(btn => {
+        pointerIds.forEach(pointerId => {
+            if(typeof pointerId === 'number' && btn.hasPointerCapture && btn.hasPointerCapture(pointerId)) {
+                try { btn.releasePointerCapture(pointerId); } catch(e) {}
+            }
+        });
+        btn.classList.remove('pressed');
+    });
+    touchPointers.clear();
     touchVector.x = 0;
     touchVector.y = 0;
-    const knob = document.getElementById('stickKnob');
-    if(knob) knob.style.transform = 'translate(0px, 0px)';
-    const stick = document.getElementById('moveStick');
-    if(stick && stickPointerId !== null && stick.hasPointerCapture && stick.hasPointerCapture(stickPointerId)) {
-        try { stick.releasePointerCapture(stickPointerId); } catch(e) {}
-    }
-    stickPointerId = null;
 }
 
-function updateTouchStick(clientX, clientY) {
-    const stick = document.getElementById('moveStick');
-    const knob = document.getElementById('stickKnob');
-    if(!stick || !knob) return;
-    const rect = stick.getBoundingClientRect();
-    if(!rect || !rect.width || !rect.height) return;
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    let dx = clientX - cx;
-    let dy = clientY - cy;
-    const knobSize = knob.offsetWidth || 38;
-    const travel = Math.max(10, rect.width / 2 - knobSize / 2 - 7);
-    const distance = Math.hypot(dx, dy);
-    if(distance > travel) {
-        dx = (dx / distance) * travel;
-        dy = (dy / distance) * travel;
-    }
-    knob.style.transform = 'translate(' + dx.toFixed(1) + 'px, ' + dy.toFixed(1) + 'px)';
-    touchVector.x = Math.max(-1, Math.min(1, dx / travel));
-    touchVector.y = Math.max(-1, Math.min(1, dy / travel));
+function pressTouchDirection(dir, pointerId) {
+    if(!TOUCH_DIRECTION_VECTORS[dir]) return false;
+    const id = (pointerId === undefined || pointerId === null) ? ('key-' + dir) : pointerId;
+    touchPointers.set(id, dir);
+    updateTouchDirectionState();
+    return true;
 }
 
-function handleTouchStickStart(e) {
+function releaseTouchDirection(pointerId) {
+    if(pointerId === undefined || pointerId === null) {
+        resetTouchDirections();
+        return;
+    }
+    if(!touchPointers.has(pointerId)) return;
+    touchPointers.delete(pointerId);
+    updateTouchDirectionState();
+}
+
+function handleTouchDirectionStart(e) {
     if(!touchControlsEnabled) return;
     if(e.pointerType === 'mouse' && e.button !== 0) return;
-    const stick = document.getElementById('moveStick');
-    if(!stick) return;
-    stickPointerId = e.pointerId;
-    if(stick.setPointerCapture) {
-        try { stick.setPointerCapture(e.pointerId); } catch(err) {}
+    const button = e.currentTarget;
+    const dir = button && button.getAttribute('data-dir');
+    if(!TOUCH_DIRECTION_VECTORS[dir]) return;
+    pressTouchDirection(dir, e.pointerId);
+    if(button.setPointerCapture && e.pointerId !== undefined) {
+        try { button.setPointerCapture(e.pointerId); } catch(err) {}
     }
-    updateTouchStick(e.clientX, e.clientY);
-    e.preventDefault();
-}
-
-function handleTouchStickMove(e) {
-    if(stickPointerId === null || e.pointerId !== stickPointerId) return;
-    updateTouchStick(e.clientX, e.clientY);
-    e.preventDefault();
-}
-
-function handleTouchStickEnd(e) {
-    if(stickPointerId === null || (e.pointerId !== undefined && e.pointerId !== stickPointerId)) return;
-    resetTouchStick();
     if(e.preventDefault) e.preventDefault();
+    e.stopPropagation();
+}
+
+function handleTouchDirectionEnd(e) {
+    if(e.pointerId !== undefined) releaseTouchDirection(e.pointerId);
+    else resetTouchDirections();
+    if(e.preventDefault && e.cancelable) e.preventDefault();
+}
+
+function handleGlobalTouchEnd(e) {
+    if(!e || e.pointerId === undefined) return;
+    if(touchPointers.has(e.pointerId)) releaseTouchDirection(e.pointerId);
+}
+
+function handleTouchFallbackStart(e) {
+    if(!touchControlsEnabled) return;
+    const touch = e.changedTouches && e.changedTouches[0];
+    if(!touch) return;
+    const dir = e.currentTarget && e.currentTarget.getAttribute('data-dir');
+    if(!TOUCH_DIRECTION_VECTORS[dir]) return;
+    pressTouchDirection(dir, 'touch-' + touch.identifier);
+    if(e.preventDefault) e.preventDefault();
+}
+
+function handleTouchFallbackEnd(e) {
+    if(!e.changedTouches) return;
+    let handled = false;
+    Array.from(e.changedTouches).forEach(touch => {
+        const id = 'touch-' + touch.identifier;
+        if(touchPointers.has(id)) handled = true;
+        releaseTouchDirection(id);
+    });
+    if(handled && e.preventDefault && e.cancelable) e.preventDefault();
 }
 
 function initTouchControls() {
     if(touchControlsReady) return;
     touchControlsReady = true;
-    const stick = document.getElementById('moveStick');
-    if(!stick) return;
-    stick.addEventListener('pointerdown', handleTouchStickStart, { passive: false });
-    stick.addEventListener('pointermove', handleTouchStickMove, { passive: false });
-    stick.addEventListener('pointerup', handleTouchStickEnd, { passive: false });
-    stick.addEventListener('pointercancel', handleTouchStickEnd, { passive: false });
-    stick.addEventListener('lostpointercapture', resetTouchStick);
-    window.addEventListener('blur', resetTouchStick);
-    window.addEventListener('orientationchange', resetTouchStick);
-    window.addEventListener('resize', resetTouchStick);
+    const buttons = Array.from(document.querySelectorAll('#touchDpad .dpad-btn'));
+    buttons.forEach(button => {
+        button.addEventListener('pointerdown', handleTouchDirectionStart, { passive: false });
+        button.addEventListener('pointerup', handleTouchDirectionEnd, { passive: false });
+        button.addEventListener('pointercancel', handleTouchDirectionEnd, { passive: false });
+        button.addEventListener('lostpointercapture', handleTouchDirectionEnd);
+        button.addEventListener('contextmenu', e => e.preventDefault());
+        button.addEventListener('click', e => {
+            if(!touchControlsEnabled || e.detail !== 0) return;
+            const dir = button.getAttribute('data-dir');
+            pressTouchDirection(dir, 'key-' + dir);
+            setTimeout(() => releaseTouchDirection('key-' + dir), 240);
+        });
+        if(!window.PointerEvent) {
+            button.addEventListener('touchstart', handleTouchFallbackStart, { passive: false });
+            button.addEventListener('touchend', handleTouchFallbackEnd, { passive: false });
+            button.addEventListener('touchcancel', handleTouchFallbackEnd, { passive: false });
+        }
+    });
+    window.addEventListener('pointerup', handleGlobalTouchEnd, { passive: true });
+    window.addEventListener('pointercancel', handleGlobalTouchEnd, { passive: true });
+    window.addEventListener('blur', resetTouchDirections);
+    window.addEventListener('orientationchange', resetTouchDirections);
+    document.addEventListener('visibilitychange', () => {
+        if(document.hidden) resetTouchDirections();
+    });
+    if(!window.PointerEvent) {
+        document.addEventListener('touchend', handleTouchFallbackEnd, { passive: false });
+        document.addEventListener('touchcancel', handleTouchFallbackEnd, { passive: false });
+    }
 }
 
 function setupControls() {
@@ -1213,6 +1282,7 @@ function trackFps() {
 
 function updatePlayer() {
     if(isGamePaused()) {
+        if(touchPointers.size) resetTouchDirections();
         player.moving = false;
         return;
     }
@@ -1223,7 +1293,7 @@ function updatePlayer() {
     if(keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= 1;
     if(keys['ArrowRight'] || keys['d'] || keys['D']) dx += 1;
 
-    // Direcional analógico: a intensidade do arrasto vira velocidade.
+    // Botões direcionais: cada botão pressionado soma uma direção ao movimento.
     if(Math.hypot(touchVector.x, touchVector.y) > 0.12) {
         dx += touchVector.x;
         dy += touchVector.y;
@@ -1913,7 +1983,7 @@ function renderGameMenu() {
     html += '<div class="menu-section"><div class="menu-section-title">Interface</div><div class="menu-grid-2">' +
         '<button class="menu-action" onclick="toggleHUDPanel(\'chat\')">💬 Chat: <b style="color:' + (chatOn ? '#4ade80' : '#f87171') + '">' + (chatOn ? 'ligado' : 'desligado') + '</b></button>' +
         '<button class="menu-action" onclick="toggleHUDPanel(\'hotbar\')">⌨️ Atalhos: <b style="color:' + (hotbarOn ? '#4ade80' : '#f87171') + '">' + (hotbarOn ? 'ligado' : 'desligado') + '</b></button>' +
-        '<button class="menu-action" style="grid-column:1/-1" onclick="toggleTouchControls()">🕹️ Direcional de toque: <b style="color:' + (touchOn ? '#4ade80' : '#f87171') + '">' + (touchOn ? 'ativado' : 'desativado') + '</b></button>' +
+        '<button class="menu-action" style="grid-column:1/-1" onclick="toggleTouchControls()">🕹️ Botões direcionais: <b style="color:' + (touchOn ? '#4ade80' : '#f87171') + '">' + (touchOn ? 'ativados' : 'desativados') + '</b></button>' +
     '</div></div>';
 
     html += '<div class="menu-section"><div class="menu-section-title">Conta</div><div class="menu-grid-2">' +
@@ -2886,7 +2956,7 @@ function leaveGuild() {
 function renderHelpMenu() {
     const html = '' +
         '<details class="help-item" open><summary>⌨️ Controles no mapa</summary><div><b>WASD</b> ou <b>setas</b> movem o treinador. <b>E</b> abre o Scanner. <b>1-9</b> usam os atalhos. <b>Esc</b> fecha menus. A grama alta provoca encontros aleatórios; o Folkmom seguidor escolhido caminha ao seu lado.</div></details>' +
-        '<details class="help-item"><summary>📱 Android, direcional e mensagens</summary><div>Em celulares e tablets, o <b>direcional analógico</b> aparece à esquerda. Arraste o dedo para andar em qualquer direção e intensidade. Ative ou desative em <b>Menu do Jogo → Interface</b>. Quando aparecer uma mensagem, toque nela ou em <b>Continuar</b> para avançar; <b>Cancelar</b> fecha e limpa a fila. Em paisagem a área do jogo fica maior.</div></details>' +
+        '<details class="help-item"><summary>📱 Android, botões direcionais e mensagens</summary><div>Em celulares e tablets, os <b>quatro botões direcionais</b> aparecem sobre a tela do jogo, à esquerda: use ▲ ◀ ▶ ▼ para andar. É possível segurar dois botões para andar na diagonal. Ative ou desative em <b>Menu do Jogo → Interface</b>. Quando aparecer uma mensagem, toque nela ou em <b>Continuar</b> para avançar; <b>Cancelar</b> fecha e limpa a fila. Em paisagem a área do jogo fica maior.</div></details>' +
         '<details class="help-item"><summary>📱 Como capturar Folkmons</summary><div>Entre na <b>grama alta</b> e ande para provocar batalhas aleatórias conforme o bioma: <b>Caatinga</b>, <b>Cerrado</b> ou <b>Mata Ciliar</b>. Ao vencer, o Scan daquela espécie sobe: formas <b>básicas +30%</b>, <b>evoluídas +18%</b> e <b>finais +10%</b>. Ao chegar a <b>100%</b>, abra o <b>Scanner</b> (tecla E) e clique em <b>Gerar</b>. O excedente continua guardado. A conversão cria o Folkmom no nível 5 e precisa de espaço no time.</div></details>' +
         '<details class="help-item"><summary>⚔️ Batalha</summary><div>Escolha <b>Atacar</b> para ver os 4 golpes, <b>Trocar</b> para mudar o Folkmom em campo, <b>Item</b> para curar e <b>Fugir</b> para sair. As barras mostram PV; o log registra dano, vantagens de elemento, EXP, níveis e recompensas. Atalhos: 1-4 golpes, 5 itens, 6 troca, 0 fugir.</div></details>' +
         '<details class="help-item"><summary>🐾 Equipe e seguidor</summary><div>Clique em um slot no canto superior direito para abrir o submenu com <b>Sumário</b>, <b>Ordem do time</b> e <b>Seguidor</b>. O seguidor aparece no mapa e pode ser trocado a qualquer momento.</div></details>' +

@@ -880,17 +880,17 @@ body {
     color: var(--gold);
 }
 
-/* ===================== CONTROLES DE TOQUE ===================== */
+/* ===================== BOTÕES DIREITONAIS ===================== */
 .touch-controls {
-    position: fixed;
-    left: 18px;
-    top: 50%;
+    position: absolute;
+    left: 10px;
+    top: 45%;
     transform: translateY(-50%);
-    z-index: 60;
+    z-index: 45;
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: 7px;
+    gap: 4px;
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
@@ -900,68 +900,91 @@ body {
     display: flex;
 }
 
-.move-stick {
-    position: relative;
-    width: 116px;
-    height: 116px;
-    border-radius: 50%;
-    border: 1px solid rgba(250, 204, 21, 0.42);
-    background:
-        radial-gradient(circle at 50% 50%, rgba(250, 204, 21, 0.08) 0%, rgba(2, 6, 23, 0.24) 58%, rgba(2, 6, 23, 0.72) 100%);
-    box-shadow:
-        0 12px 32px rgba(0, 0, 0, 0.55),
-        inset 0 0 18px rgba(250, 204, 21, 0.06);
-    cursor: grab;
+.touch-dpad {
+    --dpad-size: 44px;
+    --dpad-gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(3, var(--dpad-size));
+    grid-template-rows: repeat(3, var(--dpad-size));
+    gap: var(--dpad-gap);
+    pointer-events: none;
     touch-action: none;
 }
 
-.move-stick:active {
-    cursor: grabbing;
+.dpad-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(250, 204, 21, 0.62);
+    border-radius: 12px;
+    background:
+        linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(2, 6, 23, 0.92));
+    color: #fde047;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    pointer-events: auto;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow:
+        0 5px 14px rgba(0, 0, 0, 0.48),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: transform 0.08s ease, background 0.08s ease, color 0.08s ease, box-shadow 0.08s ease;
 }
 
-.stick-ring {
-    position: absolute;
-    inset: 17px;
-    border: 1px dashed rgba(148, 163, 184, 0.3);
+.dpad-btn:hover {
+    border-color: rgba(250, 204, 21, 0.95);
+    background: linear-gradient(180deg, rgba(51, 65, 85, 0.98), rgba(15, 23, 42, 0.95));
+}
+
+.dpad-btn:focus-visible {
+    outline: 2px solid #67e8f9;
+    outline-offset: 2px;
+}
+
+.dpad-btn.pressed,
+.dpad-btn:active {
+    color: #111827;
+    background: linear-gradient(180deg, #fde047, #eab308);
+    border-color: #fef08a;
+    transform: scale(0.9);
+    box-shadow:
+        0 0 16px rgba(250, 204, 21, 0.55),
+        inset 0 2px 5px rgba(0, 0, 0, 0.22);
+}
+
+.dpad-up { grid-column: 2; grid-row: 1; }
+.dpad-left { grid-column: 1; grid-row: 2; }
+.dpad-right { grid-column: 3; grid-row: 2; }
+.dpad-down { grid-column: 2; grid-row: 3; }
+
+.dpad-center {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed rgba(148, 163, 184, 0.34);
     border-radius: 50%;
-    pointer-events: none;
-}
-
-.stick-knob {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 46px;
-    height: 46px;
-    margin-top: -23px;
-    margin-left: -23px;
-    border-radius: 50%;
-    border: 1px solid rgba(250, 204, 21, 0.75);
-    background: radial-gradient(circle at 36% 30%, #fef9c3, #eab308 56%, #a16207 100%);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-    will-change: transform;
-}
-
-.stick-label {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 9px;
-    color: rgba(226, 232, 240, 0.62);
-    font-size: 7px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-align: center;
+    color: rgba(226, 232, 240, 0.58);
+    background: rgba(2, 6, 23, 0.44);
+    font-size: 6px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
     pointer-events: none;
 }
 
 .touch-caption {
-    color: #64748b;
+    color: rgba(226, 232, 240, 0.66);
     font-size: 7px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
+    font-weight: 800;
+    letter-spacing: 0.1em;
     white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
 }
 
 /* ===================== MENSAGENS / TOAST ===================== */
@@ -2540,27 +2563,22 @@ body {
     }
 
     .touch-controls {
-        left: 12px;
+        left: 6px;
+        top: 43%;
     }
 
-    .move-stick {
-        width: 96px;
-        height: 96px;
+    .touch-dpad {
+        --dpad-size: 40px;
+        --dpad-gap: 3px;
     }
 
-    .stick-ring {
-        inset: 14px;
+    .dpad-btn {
+        border-radius: 10px;
+        font-size: 13px;
     }
 
-    .stick-knob {
-        width: 38px;
-        height: 38px;
-        margin-top: -19px;
-        margin-left: -19px;
-    }
-
-    .stick-label {
-        bottom: 7px;
+    .touch-caption {
+        font-size: 6px;
     }
 
     .toast {

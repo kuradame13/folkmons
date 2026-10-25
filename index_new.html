@@ -136,16 +136,18 @@
                 </div>
 
             </div>
-        </div>
 
-        <!-- Controles de toque (Android/tablet): direcional analógico -->
-        <div id="touchControls" class="touch-controls" aria-hidden="true">
-            <div id="moveStick" class="move-stick" role="group" aria-label="Direcional analógico">
-                <div class="stick-ring"></div>
-                <div id="stickKnob" class="stick-knob"></div>
-                <span class="stick-label">MOVER</span>
+            <!-- Botões direcionais sobre a tela do jogo (Android/tablet) -->
+            <div id="touchControls" class="touch-controls" aria-hidden="true" aria-label="Controles direcionais">
+                <div id="touchDpad" class="touch-dpad" role="group" aria-label="Botões direcionais">
+                    <button type="button" class="dpad-btn dpad-up" data-dir="up" aria-label="Mover para cima">▲</button>
+                    <button type="button" class="dpad-btn dpad-left" data-dir="left" aria-label="Mover para a esquerda">◀</button>
+                    <div class="dpad-center" aria-hidden="true">MOVER</div>
+                    <button type="button" class="dpad-btn dpad-right" data-dir="right" aria-label="Mover para a direita">▶</button>
+                    <button type="button" class="dpad-btn dpad-down" data-dir="down" aria-label="Mover para baixo">▼</button>
+                </div>
+                <span class="touch-caption">BOTÕES DIREITONAIS</span>
             </div>
-            <span class="touch-caption">TOQUE E ARRASTE</span>
         </div>
 
         <!-- Mensagens: toque para continuar ou cancele -->
