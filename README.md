@@ -67,9 +67,13 @@ index.html
 style.css
 folkmons_data.js
 game_new.js
+cloud_config.js
+cloud_auth.js
+vendor/supabase.js
 galeria.html
 assets/sprites/...
 assets/sprites64/...
+assets/trainer/...
 ```
 
 3. No GitHub, vá em **Settings → Pages**.
