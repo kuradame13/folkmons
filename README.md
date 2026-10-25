@@ -10,8 +10,9 @@ captura é feita pelo **Scan** do Scanner, que acumula dados de cada espécie at
 
 - Login, cadastro e troca de senha **locais** (salvos no `localStorage`).
 - **Conta na nuvem pronta para Supabase**: cadastro por e-mail, login, troca de
-  senha, redefinição por e-mail e save sincronizado. Veja
-  [`docs/nuvem.md`](docs/nuvem.md) para ativar com duas chaves.
+  senha, redefinição por e-mail e save sincronizado em `public.profiles`, com
+  **RLS** por jogador. Veja [`docs/banco.md`](docs/banco.md) e
+  [`docs/nuvem.md`](docs/nuvem.md) para ativar com o SQL e duas chaves.
 - **Treinador visível no mapa**, com sprite próprio em 4 direções, animação de
   caminhada, sombra, seta e etiqueta “VOCÊ”. Ande com **WASD** ou setas.
 - **HUD inspirada em cliente de MMO**: localização, canal, relógio acelerado,
@@ -183,21 +184,25 @@ assets/sprites/       PNGs transparentes 128×128
 assets/sprites64/     PNGs transparentes 64×64
 assets/trainer/       folha de sprites do treinador
 assets/chroma/        PNGs com fundo verde chroma puro (1024×1024)
-docs/                 prompts, ideias de lendários e guia da nuvem
+docs/                 prompts, ideias de lendários, guia da nuvem e guia do banco
+supabase/schema.sql   SQL para criar profiles, triggers e RLS no Supabase
 tools/                scripts de geração, treinador e empacotamento
 ```
 
 ## Conta na nuvem (opcional, recomendado)
 
 O código da nuvem já está no jogo, mas fica desligado até você criar um projeto
-gratuito no Supabase e colocar a **Project URL** e a **anon public key** em
+gratuito no Supabase, executar [`supabase/schema.sql`](supabase/schema.sql) no
+SQL Editor e colocar a **Project URL** e a **anon public key** em
 `cloud_config.js`.
 
-Passo a passo completo: [`docs/nuvem.md`](docs/nuvem.md).
+Passo a passo completo: [`docs/banco.md`](docs/banco.md) e
+[`docs/nuvem.md`](docs/nuvem.md).
 
 Com a nuvem ligada:
 
 - cadastro por e-mail, login e senha com hash no Supabase;
+- perfil e save por conta em `public.profiles`, com RLS;
 - **Menu do Jogo → Trocar senha** para alterar a senha logado;
 - aba **Redefinir Senha** para receber link por e-mail;
 - save (time, itens, posição, evoluções, Enciclore, atalhos, seguidor,
@@ -274,8 +279,8 @@ Ideias de lendários: `docs/legendarios.md`.
 
 - Sem as chaves do Supabase, as contas continuam locais do navegador: somem se
   o usuário limpar os dados do site. Com a nuvem ativada, o Supabase cuida do
-  hash da senha e do save; a chave anon é pública, mas o projeto free pode ser
-  pausado após 7 dias sem uso.
+  hash da senha e `public.profiles` guarda o save com RLS por jogador; a chave
+  anon é pública, mas o projeto free pode ser pausado após 7 dias sem uso.
 - O projeto é um protótipo: balanceamento, mapas e quests ainda podem mudar.
 - Confira os sprites na galeria. Alguns podem precisar de ajuste manual (por
   exemplo, o Saci às vezes sai com duas pernas).

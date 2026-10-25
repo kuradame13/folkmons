@@ -292,6 +292,14 @@ function markDexCaught(id) {
 
 function cloudErrorMessage(err) {
     const message = (err && (err.message || err.error_description)) || 'Erro ao acessar a nuvem.';
+    const code = err && err.code;
+    if(code === '42P01' || code === 'PGRST205' ||
+        /Could not find the table|relation ["']?public\.profiles["']? does not exist/i.test(message)) {
+        return 'Banco online ainda não configurado. Execute o arquivo supabase/schema.sql no SQL Editor do Supabase.';
+    }
+    if(code === '42501' || /row-level security|permission denied for table profiles/i.test(message)) {
+        return 'Sem permissão no banco online. Confira as políticas de RLS do arquivo supabase/schema.sql.';
+    }
     if(/Invalid login credentials/i.test(message)) return 'E-mail ou senha inválidos.';
     if(/Email not confirmed/i.test(message)) return 'Confirme seu e-mail antes de entrar.';
     if(/User already registered|already been registered/i.test(message)) return 'Este e-mail já está cadastrado. Faça login.';
@@ -476,7 +484,8 @@ async function register() {
             }
             currentUser = data.user.email;
             const meta = data.user.user_metadata || {};
-            player = meta.save || newPlayer();
+            const cloudProfile = data.profile || null;
+            player = (cloudProfile && cloudProfile.save) || meta.save || newPlayer();
             normalizePlayer();
             msg.style.color = 'green';
             msg.textContent = 'Conta criada com sucesso!';
@@ -484,7 +493,7 @@ async function register() {
             document.getElementById('regEmail').value = '';
             document.getElementById('regPassword').value = '';
             document.getElementById('regPassword2').value = '';
-            enterGame(meta.trainer_name || username);
+            enterGame((cloudProfile && cloudProfile.trainer_name) || meta.trainer_name || username);
         } catch(err) {
             msg.style.color = 'red';
             msg.textContent = cloudErrorMessage(err);
@@ -519,12 +528,13 @@ async function login() {
         try {
             const data = await CloudAuth.login(identifier, pass);
             const meta = data.user.user_metadata || {};
+            const cloudProfile = data.profile || null;
             currentUser = data.user.email;
-            player = meta.save || newPlayer();
+            player = (cloudProfile && cloudProfile.save) || meta.save || newPlayer();
             normalizePlayer();
             document.getElementById('loginPassword').value = '';
             msg.textContent = '';
-            enterGame(meta.trainer_name || data.user.email.split('@')[0]);
+            enterGame((cloudProfile && cloudProfile.trainer_name) || meta.trainer_name || data.user.email.split('@')[0]);
         } catch(err) {
             msg.style.color = 'red';
             msg.textContent = cloudErrorMessage(err);
@@ -733,11 +743,11 @@ async function tryCloudAutoLogin() {
     try {
         const user = await CloudAuth.getSessionUser();
         if(!user) return false;
-        const meta = user.user_metadata || {};
+        const cloudProfile = await CloudAuth.loadProfile(true);
         currentUser = user.email;
-        player = meta.save || newPlayer();
+        player = (cloudProfile && cloudProfile.save) || newPlayer();
         normalizePlayer();
-        enterGame(meta.trainer_name || user.email.split('@')[0]);
+        enterGame((cloudProfile && cloudProfile.trainer_name) || user.email.split('@')[0]);
         if(window.location.hash.includes('type=recovery')) {
             setTimeout(openChangePassword, 800);
         }
@@ -2962,7 +2972,7 @@ function renderHelpMenu() {
         '<details class="help-item"><summary>🐾 Equipe e seguidor</summary><div>Clique em um slot no canto superior direito para abrir o submenu com <b>Sumário</b>, <b>Ordem do time</b> e <b>Seguidor</b>. O seguidor aparece no mapa e pode ser trocado a qualquer momento.</div></details>' +
         '<details class="help-item"><summary>🎒 Mochila, atalhos e evolução</summary><div>A Mochila tem abas de cura, evolução e chaves. Arraste itens curativos para os atalhos 1-9 ou use o botão <b>→ Atalho</b>. Itens de evolução evoluem Folkmons compatíveis do time. Alguns Folkmons também evoluem por nível ou troca.</div></details>' +
         '<details class="help-item"><summary>📖 Enciclore, Mercado e PvP</summary><div>O <b>Enciclore</b> registra vistos e capturados. O <b>Mercado (GTL)</b> permite comprar e vender Folkmons e itens com dinheiro do jogo. A <b>Arena PvP</b> oferece duelos locais 1v1 e ranking; o online chega com a nuvem.</div></details>' +
-        '<details class="help-item"><summary>☁️ Conta, nuvem e senha</summary><div>O jogo funciona com conta local neste navegador. Quando o Supabase estiver ativado, o login por e-mail sincroniza o save na nuvem. A troca de senha fica no <b>Menu do Jogo</b>. Nunca compartilhe a chave <b>service_role</b>; apenas a chave pública anon pode ficar no site.</div></details>' +
+        '<details class="help-item"><summary>☁️ Conta, nuvem e senha</summary><div>O jogo funciona com conta local neste navegador. Com o Supabase ativado, cada conta tem um perfil em <b>public.profiles</b> protegido por <b>RLS</b>, com nome de treinador e save sincronizado. O banco precisa do SQL <b>supabase/schema.sql</b>, executado uma vez no SQL Editor. A troca de senha fica no <b>Menu do Jogo</b>. Nunca compartilhe a chave <b>service_role</b>; apenas a chave pública anon pode ficar no site.</div></details>' +
         '<details class="help-item"><summary>🎨 Sprites e folclore</summary><div>Os sprites usam fundo chroma verde e serão substituídos/misturados depois. O jogo não usa nomes ou assets de outras franquias de criaturas: todos os Folkmons são inspirados no folclore brasileiro.</div></details>' +
         '<div class="menu-grid-2" style="margin-top:12px;">' +
             '<button class="menu-action" onclick="openMenu(\'phone\')">📱 Abrir Scanner</button>' +
