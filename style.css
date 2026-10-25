@@ -1763,6 +1763,8 @@ body {
     height: 100%;
     overflow-y: auto;
     padding-right: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: #334155 #0b1220;
 }
 
 .battle-btn {
@@ -1866,6 +1868,8 @@ body {
     line-height: 1.35;
     background: #0b1220;
     color: #cbd5e1;
+    scrollbar-width: thin;
+    scrollbar-color: #334155 #0b1220;
 }
 
 .battle-log .log-good { color: #4ade80; font-weight: 700; }
