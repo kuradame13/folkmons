@@ -69,7 +69,7 @@ Se preferir, envie a URL e a chave anon para eu configurar e publicar.
 - **Nome de treinador** e **save do jogo**: ficam em `user_metadata`, na conta
   do usuário. Não é preciso criar tabelas nem configurar RLS.
 - O save inclui time, itens, evoluções, posição no mapa, estatísticas,
-  Folclorédex, atalhos, seguidor, amigos e guilda local.
+  Enciclore, atalhos, seguidor, amigos e guilda local.
 - Os sprites e o código continuam no GitHub Pages; só a conta/save vão para o
   Supabase.
 

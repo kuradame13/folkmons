@@ -139,7 +139,7 @@ function normalizePlayer() {
     player.settings = Object.assign({ chat: true, hotbar: true }, player.settings || {});
     if(!player.pos) player.pos = { x: 400, y: 300 };
 
-    // Saves antigos não tinham Folclorédex. O time atual conta como visto/capturado.
+    // Saves antigos não tinham Enciclore. O time atual conta como visto/capturado.
     player.team.forEach(mon => {
         if(!mon || !mon.id) return;
         player.dex.seen[mon.id] = true;
@@ -1345,7 +1345,7 @@ function renderBagMenu() {
         html += '<div class="menu-section"><div class="menu-section-title">Itens-chave</div>' +
             '<div class="menu-grid-2">' +
                 '<button class="menu-action" onclick="openMenu(\'phone\')">📱 Celular · Scanner</button>' +
-                '<button class="menu-action" onclick="openMenu(\'dex\')">📖 Folclorédex</button>' +
+                '<button class="menu-action" onclick="openMenu(\'dex\')">📖 Enciclore</button>' +
                 '<button class="menu-action" onclick="openMenu(\'card\')">🪪 Cartão de Treinador</button>' +
                 '<button class="menu-action" onclick="openMenu(\'help\')">❓ Manual de campo</button>' +
             '</div>' +
@@ -1439,7 +1439,7 @@ function renderTradesMenu() {
     });
     html += '<button class="menu-action" onclick="doTradeMenu()" style="width:100%;margin-top:8px;">🔁 Realizar troca (se tiver par)</button>' +
         '<p id="tradeMsg" class="msg" style="text-align:left;font-size:10px;"></p>' +
-        '<div class="menu-note">A troca evolui os dois Folkmons e conta para o Folclorédex. Trocas online entre jogadores chegam com a conta na nuvem.</div>';
+        '<div class="menu-note">A troca evolui os dois Folkmons e conta para o Enciclore. Trocas online entre jogadores chegam com a conta na nuvem.</div>';
     setMenu('Trocas de Evolução', html, true);
 }
 
@@ -1907,7 +1907,7 @@ function renderDexMenu() {
     '</div>' +
     '<div id="dexGrid" class="dex-grid"></div>' +
     '<div class="menu-note">Vistos aparecem em azul; capturados, em verde. Abra um registro para ver atributos, folclore e evolução.</div>';
-    setMenu('Folclorédex', html, true);
+    setMenu('Enciclore', html, true);
     refreshDexGrid();
 }
 
@@ -1994,10 +1994,10 @@ function openDexEntry(id) {
     '</div>';
     html += '<div class="menu-section"><div class="menu-section-title">Evolução</div><p>' + escapeHTML(evolutionDescription(base)) + '</p></div>';
     html += '<div class="menu-grid-2" style="margin-top:12px;">' +
-        '<button class="menu-action" onclick="openMenu(\'dex\')">↩ Voltar ao Folclorédex</button>' +
+        '<button class="menu-action" onclick="openMenu(\'dex\')">↩ Voltar ao Enciclore</button>' +
         '<button class="menu-action" onclick="closeMenu()">Fechar</button>' +
     '</div>';
-    setMenu('Folclorédex · ' + base.name, html, false);
+    setMenu('Enciclore · ' + base.name, html, false);
 }
 
 // ===================== CARTÃO DE TREINADOR =====================
@@ -2028,11 +2028,11 @@ function renderTrainerCard() {
     html += '<div class="menu-section"><div class="menu-section-title">Equipe <span>' + (player.team || []).length + '/6</span></div>' +
         '<div class="trainer-stats">' +
             '<div class="stat-row"><span>Maior nível</span><b>' + teamLevel + '</b></div>' +
-            '<div class="stat-row"><span>Folclorédex</span><b>' + dexCounts().caught + '/' + dexCounts().total + '</b></div>' +
+            '<div class="stat-row"><span>Enciclore</span><b>' + dexCounts().caught + '/' + dexCounts().total + '</b></div>' +
         '</div></div>';
     html += '<div class="menu-grid-2" style="margin-top:12px;">' +
         '<button class="menu-action" onclick="openMenu(\'items\')">🎒 Mochila</button>' +
-        '<button class="menu-action" onclick="openMenu(\'dex\')">📖 Folclorédex</button>' +
+        '<button class="menu-action" onclick="openMenu(\'dex\')">📖 Enciclore</button>' +
     '</div>';
     setMenu('Cartão de Treinador', html, true);
 }
@@ -2390,7 +2390,7 @@ function renderHelpMenu() {
         '<details class="help-item"><summary>⚔️ Batalha</summary><div>Escolha <b>Atacar</b> para ver os 4 golpes, <b>Trocar</b> para mudar o Folkmom em campo, <b>Item</b> para curar e <b>Fugir</b> para sair. As barras mostram PV; o log registra dano, vantagens de elemento, EXP, níveis e recompensas. Atalhos: 1-4 golpes, 5 itens, 6 troca, 0 fugir.</div></details>' +
         '<details class="help-item"><summary>🐾 Equipe e seguidor</summary><div>Clique em um slot no canto superior direito para abrir o submenu com <b>Sumário</b>, <b>Ordem do time</b> e <b>Seguidor</b>. O seguidor aparece no mapa e pode ser trocado a qualquer momento.</div></details>' +
         '<details class="help-item"><summary>🎒 Mochila, atalhos e evolução</summary><div>A Mochila tem abas de cura, evolução e chaves. Arraste itens curativos para os atalhos 1-9 ou use o botão <b>→ Atalho</b>. Itens de evolução evoluem Folkmons compatíveis do time. Alguns Folkmons também evoluem por nível ou troca.</div></details>' +
-        '<details class="help-item"><summary>📖 Folclorédex, Mercado e PvP</summary><div>O <b>Folclorédex</b> registra vistos e capturados. O <b>Mercado (GTL)</b> permite comprar e vender Folkmons e itens com dinheiro do jogo. A <b>Arena PvP</b> oferece duelos locais 1v1 e ranking; o online chega com a nuvem.</div></details>' +
+        '<details class="help-item"><summary>📖 Enciclore, Mercado e PvP</summary><div>O <b>Enciclore</b> registra vistos e capturados. O <b>Mercado (GTL)</b> permite comprar e vender Folkmons e itens com dinheiro do jogo. A <b>Arena PvP</b> oferece duelos locais 1v1 e ranking; o online chega com a nuvem.</div></details>' +
         '<details class="help-item"><summary>☁️ Conta, nuvem e senha</summary><div>O jogo funciona com conta local neste navegador. Quando o Supabase estiver ativado, o login por e-mail sincroniza o save na nuvem. A troca de senha fica no <b>Menu do Jogo</b>. Nunca compartilhe a chave <b>service_role</b>; apenas a chave pública anon pode ficar no site.</div></details>' +
         '<details class="help-item"><summary>🎨 Sprites e folclore</summary><div>Os sprites usam fundo chroma verde e serão substituídos/misturados depois. O jogo não usa nomes ou assets de outras franquias de criaturas: todos os Folkmons são inspirados no folclore brasileiro.</div></details>' +
         '<div class="menu-grid-2" style="margin-top:12px;">' +

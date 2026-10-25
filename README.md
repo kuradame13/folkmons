@@ -21,11 +21,11 @@ comerciais: a captura é feita pelo **Scan** do celular.
   a HUD; a batalha também se ajusta e usa o mesmo tema escuro.
 - **Barra da equipe clicável**: abre o submenu com **Sumário**, **Ordem do
   time** e **Seguidor**. O Folkmom escolhido aparece caminhando no mapa.
-- **Menu principal completo**: Jogo, Mochila, Folclorédex, Cartão de
+- **Menu principal completo**: Jogo, Mochila, Enciclore, Cartão de
   Treinador, GTL/Mercado, PvP, Social e Ajuda.
 - **Mochila com abas** de cura, evolução e chaves. Arraste itens curativos para
   os atalhos 1–9; use evoluções por item; itens também podem ser comprados.
-- **Folclorédex** com busca, filtros por elemento/status, contagem de vistos e
+- **Enciclore** com busca, filtros por elemento/status, contagem de vistos e
   capturados e ficha de cada Folkmom.
 - **GTL local**: compra e venda de Folkmons e itens com dinheiro do jogo.
 - **Arena PvP local 1v1**, ranking, rating e BP. O online chega quando a conta
@@ -63,7 +63,7 @@ comerciais: a captura é feita pelo **Scan** do celular.
    **Fugir**. Ao vencer, você ganha EXP, moedas e pode adicionar o Folkmom ao
    time.
 8. Use os menus do canto inferior direito: **Mochila** (itens/atalhos),
-   **Dex** (Folclorédex), **Cartão** (ficha do treinador), **GTL** (mercado),
+   **Enciclore**, **Cartão** (ficha do treinador), **GTL** (mercado),
    **PvP** (duelos locais), **Social** (amigos, guilda, correio e trocas) e
    **Ajuda**. O menu **Jogo** tem salvar, tela cheia, trocar senha e sair.
 9. Clique nos slots do canto superior direito para abrir **Sumário**, mudar a
@@ -158,7 +158,7 @@ Com a nuvem ligada:
 - cadastro por e-mail, login e senha com hash no Supabase;
 - **Menu do Jogo → Trocar senha** para alterar a senha logado;
 - aba **Redefinir Senha** para receber link por e-mail;
-- save (time, itens, posição, evoluções, Folclorédex, atalhos, seguidor,
+- save (time, itens, posição, evoluções, Enciclore, atalhos, seguidor,
   amigos e guilda local) sincronizado na conta.
 
 A chave **anon** é pública e pode ficar no site. Nunca use a
