@@ -122,7 +122,7 @@
                 </div>
 
                 <!-- Ação principal do jogo -->
-                <button id="scanFab" class="scan-fab" onclick="openMenu('phone')" title="Abrir o Scanner (E)">📱 <span>Scan</span></button>
+                <button id="scanFab" class="scan-fab" onclick="openMenu('phone')" title="Abrir o Scanner (E)">📱 <span>Scan</span><i id="scanFabBadge" class="scan-fab-badge" style="display:none;">0</i></button>
 
                 <!-- Submenu da equipe -->
                 <div id="partyContext" class="party-context" style="display:none;">
@@ -192,6 +192,11 @@
                         <div class="enemy-name"><span id="enemyName"></span> Lv.<span id="enemyLevel"></span></div>
                         <div class="hp-bar"><div id="enemyHpBar" class="hp-fill"></div></div>
                         <div class="hp-text"><span id="enemyHpText"></span></div>
+                        <div id="battleScanPanel" class="battle-scan-panel" style="display:none;">
+                            <div class="battle-scan-head"><span>SCAN</span><b id="battleScanPercent">0%</b></div>
+                            <div class="battle-scan-track"><div id="battleScanFill"></div></div>
+                            <div id="battleScanHint" class="battle-scan-hint">+0% ao vencer</div>
+                        </div>
                     </div>
                     <div class="enemy-sprite" id="enemySprite">👾</div>
                 </div>

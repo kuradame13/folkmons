@@ -44,6 +44,108 @@ function getFolkmomById(id) {
     return ALL_FOLKMONS.find(f => f.id === id);
 }
 
+// Estágio evolutivo de cada forma (0 = básico, 1 = evoluído, 2 = final).
+const EVO_STAGE = (() => {
+    const stages = {};
+    ALL_FOLKMONS.forEach(mon => { stages[mon.id] = 0; });
+    for(let pass = 0; pass < 5; pass++) {
+        let changed = false;
+        ALL_FOLKMONS.forEach(mon => {
+            const current = stages[mon.id] || 0;
+            (mon.evoTo || []).forEach(nextId => {
+                if(stages[nextId] !== undefined && stages[nextId] < current + 1) {
+                    stages[nextId] = current + 1;
+                    changed = true;
+                }
+            });
+        });
+        if(!changed) break;
+    }
+    return stages;
+})();
+
+// O Scan é por espécie. Formas básicas rendem mais; formas finais rendem menos.
+const SCAN_STAGE_META = [
+    { name: 'Básico', gain: 30 },
+    { name: 'Evoluído', gain: 18 },
+    { name: 'Final', gain: 10 }
+];
+const SCAN_MAX = 200;
+
+// Biomas de grama alta. Cada um favorece elementos e níveis evolutivos diferentes.
+const BIOME_CONFIG = {
+    mata: {
+        name: 'Mata Ciliar',
+        short: 'Mata',
+        elements: ['Agua', 'Grama', 'Vento'],
+        stageWeights: [0.68, 0.26, 0.06],
+        levelOffset: 0,
+        ground: '#1f6b3c',
+        groundAlt: '#2a7d47',
+        blade: '#8ee6a5',
+        glow: 'rgba(74, 222, 128, 0.28)',
+        desc: 'Umidade, folhas largas e Folkmons de Água, Grama e Vento.'
+    },
+    caatinga: {
+        name: 'Caatinga',
+        short: 'Caatinga',
+        elements: ['Fogo', 'Terra', 'Trevas', 'Eletrico'],
+        stageWeights: [0.64, 0.28, 0.08],
+        levelOffset: 1,
+        ground: '#766b32',
+        groundAlt: '#8b7d3a',
+        blade: '#e8d879',
+        glow: 'rgba(250, 204, 21, 0.24)',
+        desc: 'Terra seca e espinhenta, com Folkmons de Fogo, Terra, Trevas e Elétrico.'
+    },
+    cerrado: {
+        name: 'Cerrado',
+        short: 'Cerrado',
+        elements: ['Grama', 'Fogo', 'Terra', 'Vento'],
+        stageWeights: [0.67, 0.26, 0.07],
+        levelOffset: 1,
+        ground: '#536b24',
+        groundAlt: '#647d2c',
+        blade: '#c7e86a',
+        glow: 'rgba(163, 230, 53, 0.24)',
+        desc: 'Campos abertos e arbustos, com Folkmons de Grama, Fogo, Terra e Vento.'
+    }
+};
+
+const BIOME_PATCHES = [
+    { key: 'mata', x: 14, y: 2, w: 5, h: 4 },
+    { key: 'mata', x: 1, y: 2, w: 4, h: 3 },
+    { key: 'cerrado', x: 7, y: 1, w: 5, h: 3 },
+    { key: 'caatinga', x: 2, y: 9, w: 5, h: 4 },
+    { key: 'caatinga', x: 15, y: 10, w: 4, h: 3 }
+];
+
+function scanStageOf(id) {
+    return Math.max(0, Math.min(2, EVO_STAGE[id] || 0));
+}
+
+function scanStageMeta(id) {
+    return SCAN_STAGE_META[scanStageOf(id)];
+}
+
+function scanGainFor(mon) {
+    return scanStageMeta(mon && mon.id).gain;
+}
+
+function getScanPercent(id) {
+    if(!id || !player || !player.scanData) return 0;
+    const value = Number(player.scanData[id]);
+    return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+}
+
+function setScanPercent(id, value) {
+    if(!id || !player) return;
+    if(!player.scanData) player.scanData = {};
+    const pct = Math.max(0, Math.min(SCAN_MAX, Math.floor(Number(value) || 0)));
+    if(pct > 0) player.scanData[id] = pct;
+    else delete player.scanData[id];
+}
+
 // Sprite em PNG (assets/sprites/<id>.png). Se a imagem ainda nao existir,
 // cai de volta para o emoji original da base.
 function monsterSpriteHTML(mon, extraClass) {
@@ -101,6 +203,7 @@ function newPlayer() {
             scans: 0,
             captures: 0,
             battlesWon: 0,
+            randomEncounters: 0,
             evolves: 0,
             bp: 0,
             playSeconds: 0,
@@ -109,6 +212,7 @@ function newPlayer() {
             pvpRating: 1000
         },
         dex: { seen: {}, caught: {} },
+        scanData: {},
         hotbar: ['cura_simples', null, null, null, null, null, null, null, null],
         followerIndex: 0,
         trainerName: '',
@@ -134,6 +238,14 @@ function normalizePlayer() {
     player.dex = Object.assign({ seen: {}, caught: {} }, player.dex || {});
     player.dex.seen = player.dex.seen || {};
     player.dex.caught = player.dex.caught || {};
+    const scanData = {};
+    Object.keys(player.scanData && typeof player.scanData === 'object' ? player.scanData : {}).forEach(id => {
+        const pct = Number(player.scanData[id]);
+        if(getFolkmomById(id) && Number.isFinite(pct) && pct > 0) {
+            scanData[id] = Math.min(200, Math.floor(pct));
+        }
+    });
+    player.scanData = scanData;
     player.hotbar = Array.isArray(player.hotbar) ? player.hotbar.slice(0, 9) : [];
     while(player.hotbar.length < 9) player.hotbar.push(null);
     if(!player.hotbar[0] && player.items.cura_simples > 0) player.hotbar[0] = 'cura_simples';
@@ -557,16 +669,6 @@ async function logout() {
     currentBattle = null;
     player = {};
     closePartyMenu();
-    if(scanInterval) {
-        clearInterval(scanInterval);
-        scanInterval = null;
-    }
-    currentScanPercent = 0;
-    const scanPercent = document.getElementById('scanPercent');
-    if(scanPercent) scanPercent.textContent = '0%';
-    const scanStatus = document.getElementById('scanStatus');
-    if(scanStatus) scanStatus.textContent = 'Pronto';
-
     const battleScreen = document.getElementById('battleScreen');
     if(battleScreen) battleScreen.style.display = 'none';
     const battleLog = document.getElementById('battleLog');
@@ -639,6 +741,10 @@ let player = {};
 let canvas, ctx;
 let keys = {};
 let gameMap = [];
+let biomeMap = [];
+let lastGrassTile = '';
+let encounterCooldown = 0;
+let grassSteps = 0;
 let currentBattle = null;
 let trainerSheet = null;
 let trainerReady = false;
@@ -940,7 +1046,9 @@ function selectStarter(starterId) {
 function generateMap() {
     for(let y = 0; y < 15; y++) {
         gameMap[y] = [];
+        biomeMap[y] = [];
         for(let x = 0; x < 20; x++) {
+            biomeMap[y][x] = null;
             if(Math.random() < 0.35) gameMap[y][x] = 0;
             else if(Math.random() < 0.08) gameMap[y][x] = 4;
             else gameMap[y][x] = 1;
@@ -952,17 +1060,130 @@ function generateMap() {
         if(gameMap[y][x] !== 4) gameMap[y][x] = 2;
     }
 
-    // Nunca nascer (ou ficar preso) dentro de uma árvore.
+    // Grama alta por bioma. Itens raros são preservados.
+    BIOME_PATCHES.forEach(patch => {
+        for(let y = patch.y; y < patch.y + patch.h; y++) {
+            for(let x = patch.x; x < patch.x + patch.w; x++) {
+                if(y < 0 || y >= 15 || x < 0 || x >= 20) continue;
+                if(gameMap[y][x] === 4) continue;
+                gameMap[y][x] = 3;
+                biomeMap[y][x] = patch.key;
+            }
+        }
+    });
+
+    // Nunca nascer (ou ficar preso) dentro de uma árvore ou da grama alta.
     const startX = Math.floor(player.x / 40);
     const startY = Math.floor(player.y / 40);
     for(let dy = -1; dy <= 1; dy++) {
         for(let dx = -1; dx <= 1; dx++) {
             const tx = startX + dx;
             const ty = startY + dy;
-            if(ty >= 0 && ty < 15 && tx >= 0 && tx < 20 && gameMap[ty][tx] === 2) {
+            if(ty >= 0 && ty < 15 && tx >= 0 && tx < 20 && (gameMap[ty][tx] === 2 || gameMap[ty][tx] === 3)) {
                 gameMap[ty][tx] = 1;
+                biomeMap[ty][tx] = null;
             }
         }
+    }
+
+    lastGrassTile = '';
+    grassSteps = 0;
+    encounterCooldown = 0;
+}
+
+function getBiomeKeyAt(tileX, tileY) {
+    if(tileY < 0 || tileY >= 15 || tileX < 0 || tileX >= 20) return null;
+    if(!gameMap[tileY] || gameMap[tileY][tileX] !== 3) return null;
+    const key = biomeMap[tileY] && biomeMap[tileY][tileX];
+    return key && BIOME_CONFIG[key] ? key : null;
+}
+
+function getCurrentBiome() {
+    if(!player || typeof player.x !== 'number' || typeof player.y !== 'number') return null;
+    const key = getBiomeKeyAt(Math.floor(player.x / 40), Math.floor(player.y / 40));
+    if(!key) return null;
+    return Object.assign({ key: key }, BIOME_CONFIG[key]);
+}
+
+function biomePool(key) {
+    const biome = BIOME_CONFIG[key];
+    if(!biome) return FOLKMONS.main.slice();
+    return FOLKMONS.main.filter(mon => {
+        const primary = (mon.element || '').split('/')[0];
+        return biome.elements.includes(primary);
+    });
+}
+
+function randomWildForBiome(key) {
+    const biome = BIOME_CONFIG[key] || BIOME_CONFIG.cerrado;
+    const pool = biomePool(key);
+    if(!pool.length) return null;
+
+    const roll = Math.random();
+    let accumulated = 0;
+    let stage = 0;
+    biome.stageWeights.forEach((weight, index) => {
+        accumulated += weight;
+        if(roll < accumulated) stage = index;
+    });
+
+    let stagePool = pool.filter(mon => scanStageOf(mon.id) === stage);
+    if(!stagePool.length) stagePool = pool;
+
+    const base = stagePool[Math.floor(Math.random() * stagePool.length)];
+    const healthy = (player.team || []).find(mon => mon.hp > 0) || (player.team || [])[0];
+    const leadLevel = healthy && healthy.level ? healthy.level : 5;
+    const jitter = Math.floor(Math.random() * 3) - 1;
+    const level = Math.max(3, Math.min(60, leadLevel + biome.levelOffset + (stage === 0 ? 0 : stage === 1 ? 4 : 8) + jitter));
+    const wild = createFolkmom(base.id, level);
+    if(wild) wild.scanStage = stage;
+    return wild;
+}
+
+function triggerRandomEncounter(biomeKey) {
+    if(currentBattle || !player || !player.starterChosen) return false;
+    if(isMenuOpen()) return false;
+    const battleScreen = document.getElementById('battleScreen');
+    if(battleScreen && battleScreen.style.display !== 'none') return false;
+    if(!(player.team || []).some(mon => mon.hp > 0)) return false;
+
+    const key = BIOME_CONFIG[biomeKey] ? biomeKey : 'cerrado';
+    const wild = randomWildForBiome(key);
+    if(!wild) return false;
+
+    player.stats.randomEncounters = (player.stats.randomEncounters || 0) + 1;
+    encounterCooldown = 6;
+    grassSteps = 0;
+    startBattleScan(wild, { kind: 'wild', isScan: true, biome: key });
+    return true;
+}
+
+function maybeTriggerRandomEncounter() {
+    if(currentBattle || !player || !player.starterChosen) return;
+    if(isMenuOpen() || isGamePaused()) return;
+
+    const tileX = Math.floor(player.x / 40);
+    const tileY = Math.floor(player.y / 40);
+    const key = getBiomeKeyAt(tileX, tileY);
+    if(!key) {
+        lastGrassTile = '';
+        grassSteps = 0;
+        return;
+    }
+
+    const tileKey = tileX + ',' + tileY;
+    if(tileKey === lastGrassTile) return;
+    lastGrassTile = tileKey;
+    grassSteps++;
+
+    if(encounterCooldown > 0) {
+        encounterCooldown--;
+        return;
+    }
+
+    const chance = Math.min(0.34, 0.14 + grassSteps * 0.02);
+    if(Math.random() < chance) {
+        triggerRandomEncounter(key);
     }
 }
 
@@ -1030,6 +1251,7 @@ function updatePlayer() {
     if(!blocked) {
         player.x = nextX;
         player.y = nextY;
+        maybeTriggerRandomEncounter();
     }
 }
 
@@ -1041,7 +1263,28 @@ function drawMap() {
             ctx.fillStyle = (x + y) % 2 === 0 ? '#7CFC00' : '#74e600';
             ctx.fillRect(tileX, tileY, 40, 40);
 
-            if(gameMap[y][x] === 2) {
+            if(gameMap[y][x] === 3) {
+                const key = biomeMap[y] && biomeMap[y][x];
+                const biome = BIOME_CONFIG[key] || BIOME_CONFIG.cerrado;
+                ctx.fillStyle = (x + y) % 2 === 0 ? biome.ground : biome.groundAlt;
+                ctx.fillRect(tileX, tileY, 40, 40);
+                ctx.fillStyle = biome.glow;
+                ctx.fillRect(tileX, tileY, 40, 40);
+                for(let i = 0; i < 5; i++) {
+                    const sway = Math.sin(performance.now() / 480 + x * 0.8 + y * 1.1 + i) * 1.8;
+                    const bx = tileX + 5 + i * 7;
+                    ctx.strokeStyle = biome.blade;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(bx, tileY + 36);
+                    ctx.lineTo(bx + 2 + sway, tileY + 22 + (i % 3) * 3);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(bx + 3, tileY + 36);
+                    ctx.lineTo(bx - 1 + sway, tileY + 27 + (i % 2) * 2);
+                    ctx.stroke();
+                }
+            } else if(gameMap[y][x] === 2) {
                 ctx.fillStyle = 'rgba(34,139,34,0.28)';
                 ctx.fillRect(tileX, tileY, 40, 40);
                 ctx.font = '30px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
@@ -1567,26 +1810,91 @@ function renderTradesMenu() {
 }
 
 function renderPhoneMenu() {
-    const percent = Math.max(0, Math.min(150, currentScanPercent || 0));
-    let status = 'Pronto';
-    if(scanInterval) status = 'Escaneando...';
-    else if(percent >= 100) status = 'Scan completo! Pode consertar';
-    else if(percent > 0) status = 'Scan parcial';
-    const statusColor = percent >= 100 ? '#4ade80' : scanInterval ? '#facc15' : '#e2e8f0';
-    let html = '<h3>Scan para capturar Folkmons</h3>' +
-        '<p>Use o celular para escanear a área. Quanto maior o percentual, maior a chance de encontrar e capturar um Folkmom.</p>' +
-        '<div style="text-align:center;padding:24px;background:linear-gradient(135deg,#1e293b 0%,#0f172a 60%,#422006 100%);border:1px solid rgba(250,204,21,.35);border-radius:12px;margin:14px 0;color:white;">' +
-            '<div style="font-size:64px;line-height:1;">📱</div>' +
-            '<div style="margin-top:8px;font-size:26px;color:#facc15;"><strong id="scanPercent">' + percent + '%</strong></div>' +
-            '<div style="margin-top:4px;font-size:11px;color:' + statusColor + ';">Status: <span id="scanStatus">' + status + '</span></div>' +
+    const entries = Object.keys(player.scanData || {}).map(id => {
+        const base = getFolkmomById(id);
+        const pct = getScanPercent(id);
+        return {
+            id: id,
+            base: base,
+            pct: pct,
+            ready: pct >= 100,
+            stage: scanStageMeta(id),
+            gain: scanGainFor(base)
+        };
+    }).filter(entry => entry.base && entry.pct > 0)
+      .sort((a, b) => (b.ready - a.ready) || (b.pct - a.pct) || a.base.name.localeCompare(b.base.name));
+
+    const readyCount = entries.filter(entry => entry.ready).length;
+    const teamFull = (player.team || []).length >= 6;
+    let html = '<div class="scan-hero">' +
+        '<div class="scan-hero-icon">📡</div>' +
+        '<div class="scan-hero-copy">' +
+            '<span class="scan-kicker">CAPTURA POR DADOS</span>' +
+            '<h3>Scanner Folclórico</h3>' +
+            '<p>Ande na <b>grama alta</b> para provocar batalhas aleatórias. Vença para carregar o Scan da espécie e, ao chegar a <b>100%</b>, gere o Folkmom capturado.</p>' +
         '</div>' +
-        '<div class="menu-grid-2">' +
-            '<button class="menu-action" onclick="startScan()">📡 Iniciar Scan</button>' +
-            '<button class="menu-action" onclick="fixScan()">🔧 Consertar Scan (100%+)</button>' +
-        '</div>' +
-        '<p id="phoneMsg" class="msg" style="text-align:left;font-size:11px;margin-top:8px;"></p>' +
-        '<div class="menu-note">Dica: abra o Scanner com a tecla <b>E</b>. O Scan é a forma de capturar Folkmons neste mundo.</div>';
-    setMenu('Scanner Folclórico', html, false);
+    '</div>';
+
+    html += '<div class="scan-summary-grid">' +
+        '<div><strong id="scanReadyCount">' + readyCount + '</strong><span>prontos</span></div>' +
+        '<div><strong id="scanSpeciesCount">' + entries.length + '</strong><span>espécies</span></div>' +
+        '<div><strong>' + formatNumber(player.stats.scans || 0) + '</strong><span>amostras</span></div>' +
+        '<div><strong>' + formatNumber((player.team || []).length) + '/6</strong><span>time</span></div>' +
+    '</div>';
+
+    html += '<div class="scan-biomes">' +
+        Object.keys(BIOME_CONFIG).map(key => {
+            const biome = BIOME_CONFIG[key];
+            return '<span class="scan-biome"><i style="background:' + biome.blade + '"></i>' +
+                '<b>' + escapeHTML(biome.name) + '</b>' + escapeHTML(biome.desc) + '</span>';
+        }).join('') +
+    '</div>';
+
+    if(!entries.length) {
+        html += '<div class="scan-empty">' +
+            '<div style="font-size:34px;line-height:1;">🌿</div>' +
+            '<strong>Nenhum Scan iniciado</strong>' +
+            '<p>Procure uma área de grama alta no mapa. Cada bioma tem Folkmons diferentes: Caatinga, Cerrado e Mata Ciliar.</p>' +
+        '</div>';
+    } else {
+        html += '<div class="scan-card-list">';
+        entries.forEach(entry => {
+            const barPct = Math.min(100, entry.pct);
+            const missing = Math.max(0, 100 - entry.pct);
+            html += '<div class="scan-card ' + (entry.ready ? 'ready' : '') + '" data-species="' + entry.id + '">' +
+                '<div class="scan-card-sprite">' + monsterSpriteHTML(entry.base, 'scan-card-img') + '</div>' +
+                '<div class="scan-card-body">' +
+                    '<div class="scan-card-head"><strong>' + escapeHTML(entry.base.name) + '</strong>' +
+                        '<b>' + entry.pct + '%</b></div>' +
+                    '<div class="scan-card-meta">' + escapeHTML(entry.base.element) + ' · ' + entry.stage.name +
+                        ' · <span>+' + entry.gain + '% por vitória</span></div>' +
+                    '<div class="scan-card-track"><i class="' + (entry.ready ? 'ready' : '') + '" style="width:' + barPct + '%"></i></div>' +
+                    '<div class="scan-card-foot">' +
+                        (entry.ready
+                            ? '<span class="scan-ready-label">Scan completo · excedente ' + Math.max(0, entry.pct - 100) + '%</span>'
+                            : '<span>Faltam ' + missing + '% para gerar</span>') +
+                    '</div>' +
+                '</div>' +
+                (entry.ready
+                    ? '<button class="scan-generate" onclick="generateScannedFolkmom(\'' + entry.id + '\')" ' +
+                        (teamFull ? 'disabled title="Time cheio (6/6)"' : 'title="Consome 100% do Scan e gera um Folkmom Lv.5"') + '>Gerar</button>'
+                    : '<span class="scan-locked">🔒</span>') +
+            '</div>';
+        });
+        html += '</div>';
+    }
+
+    html += '<div class="scan-notes">' +
+        '<div><b>Como o Scan sobe:</b> formas <b>básicas +30%</b>, <b>evoluídas +18%</b> e <b>finais +10%</b>. Quanto mais evoluído o Folkmom, menor a amostra por vitória.</div>' +
+        '<div><b>Como gerar:</b> são necessários <b>100%</b>. O excedente continua no Scanner e a conversão cria o Folkmom no <b>nível 5</b>. O time precisa ter espaço.</div>' +
+    '</div>';
+
+    html += '<div class="menu-grid-2" style="margin-top:12px;">' +
+        '<button class="menu-action" onclick="openMenu(\'dex\')">📖 Abrir Enciclore</button>' +
+        '<button class="menu-action" onclick="closeMenu()">✕ Fechar Scanner</button>' +
+    '</div>';
+
+    setMenu('Scanner Folclórico', html, true);
 }
 
 function renderGameMenu() {
@@ -1666,12 +1974,12 @@ function initChatUI() {
     });
 
     const name = (player && player.trainerName) || currentUser || 'Treinador';
-    addChatMessage('Local', 'Bem-vindo(a), ' + name + '! Use WASD/setas para andar e E para abrir o Scanner.', 'system', null, true);
+    addChatMessage('Local', 'Bem-vindo(a), ' + name + '! Use WASD/setas para andar. Procure a grama alta para encontrar Folkmons e abra o Scanner com E.', 'system', null, true);
     addChatMessage('Global', 'Canal global em modo local. A conversa entre jogadores chega com a conta na nuvem.', 'system', null, true);
     addChatMessage('Comércio', 'O Mercado Folclórico (GTL) tem ofertas locais no menu inferior direito.', 'system', null, true);
     addChatMessage('Sussurro', 'Nenhuma conversa privada. Use este canal quando a nuvem estiver ativa.', 'system', null, true);
     addChatMessage('Equipe', 'Seu time aparece no canto superior direito. Clique em um Folkmom para ver sumário, ordem ou seguidor.', 'system', null, true);
-    addChatMessage('Batalha', 'Os registros das batalhas também aparecem neste canal.', 'system', null, true);
+    addChatMessage('Batalha', 'Vitórias em encontros selvagens carregam o Scan da espécie. Ao chegar a 100%, gere o Folkmom no Scanner.', 'system', null, true);
     renderChat();
 }
 
@@ -1772,7 +2080,22 @@ function updateTopHUD() {
     lastTopHudUpdate = now;
 
     const locationEl = document.getElementById('hudLocationName');
-    if(locationEl) locationEl.textContent = 'Sertão Folclórico';
+    if(locationEl) {
+        const biome = getCurrentBiome();
+        locationEl.textContent = 'Sertão Folclórico' + (biome ? ' · ' + biome.name : '');
+        locationEl.title = biome ? biome.desc : 'Explore a grama alta para encontrar Folkmons selvagens';
+    }
+
+    const scanBadge = document.getElementById('scanFabBadge');
+    if(scanBadge) {
+        const readyScans = Object.keys(player.scanData || {}).filter(id => getScanPercent(id) >= 100).length;
+        scanBadge.textContent = readyScans;
+        scanBadge.style.display = readyScans > 0 ? 'flex' : 'none';
+        const scanFab = document.getElementById('scanFab');
+        if(scanFab) scanFab.title = readyScans > 0
+            ? readyScans + ' Scan(s) pronto(s) para gerar · abrir Scanner (E)'
+            : 'Abrir o Scanner (E)';
+    }
 
     const channelEl = document.getElementById('hudChannel');
     if(channelEl) channelEl.textContent = 'Canal 1 · ' + (CLOUD_ENABLED ? 'Nuvem' : 'Local');
@@ -2148,6 +2471,9 @@ function openDexEntry(id) {
     const caught = !!(player.dex && player.dex.caught && player.dex.caught[id]);
     const status = caught ? 'Capturado' : seen ? 'Visto' : 'Desconhecido';
     const statusColor = caught ? '#4ade80' : seen ? '#38bdf8' : '#64748b';
+    const scanPct = getScanPercent(id);
+    const scanStage = scanStageMeta(id);
+    const scanGain = scanGainFor(base);
     const desc = base.desc || ('Folclore: ' + (base.folklore || 'mistério do sertão'));
     let html = '<div class="team-slot selected">' +
         '<div class="monster-sprite">' + monsterSpriteHTML(base, 'team-img') + '</div>' +
@@ -2163,6 +2489,7 @@ function openDexEntry(id) {
             '<div class="stat-row"><span>Ataque base</span><b>' + (base.baseAtk || '?') + '</b></div>' +
             '<div class="stat-row"><span>Defesa base</span><b>' + (base.baseDef || '?') + '</b></div>' +
             '<div class="stat-row"><span>Raridade</span><b>' + escapeHTML(base.rarity || 'comum') + '</b></div>' +
+            '<div class="stat-row"><span>Scan</span><b style="color:' + (scanPct >= 100 ? '#4ade80' : '#67e8f9') + '">' + scanPct + '% · ' + scanStage.name + ' (+' + scanGain + '%)</b></div>' +
         '</div>' +
     '</div>';
     html += '<div class="menu-section"><div class="menu-section-title">Evolução</div><p>' + escapeHTML(evolutionDescription(base)) + '</p></div>';
@@ -2558,9 +2885,9 @@ function leaveGuild() {
 // ===================== AJUDA =====================
 function renderHelpMenu() {
     const html = '' +
-        '<details class="help-item" open><summary>⌨️ Controles no mapa</summary><div><b>WASD</b> ou <b>setas</b> movem o treinador. <b>E</b> abre o Scanner. <b>1-9</b> usam os atalhos. <b>Esc</b> fecha menus. O Folkmom seguidor escolhido caminha ao seu lado.</div></details>' +
+        '<details class="help-item" open><summary>⌨️ Controles no mapa</summary><div><b>WASD</b> ou <b>setas</b> movem o treinador. <b>E</b> abre o Scanner. <b>1-9</b> usam os atalhos. <b>Esc</b> fecha menus. A grama alta provoca encontros aleatórios; o Folkmom seguidor escolhido caminha ao seu lado.</div></details>' +
         '<details class="help-item"><summary>📱 Android, direcional e mensagens</summary><div>Em celulares e tablets, o <b>direcional analógico</b> aparece à esquerda. Arraste o dedo para andar em qualquer direção e intensidade. Ative ou desative em <b>Menu do Jogo → Interface</b>. Quando aparecer uma mensagem, toque nela ou em <b>Continuar</b> para avançar; <b>Cancelar</b> fecha e limpa a fila. Em paisagem a área do jogo fica maior.</div></details>' +
-        '<details class="help-item"><summary>📱 Como capturar Folkmons</summary><div>Abra o <b>Scanner</b> (botão Scan ou tecla E), inicie o Scan e aguarde passar de 100%. Depois clique em <b>Consertar Scan</b>. Ao encontrar um Folkmom, vença a batalha e escolha <b>Adicionar ao time</b>.</div></details>' +
+        '<details class="help-item"><summary>📱 Como capturar Folkmons</summary><div>Entre na <b>grama alta</b> e ande para provocar batalhas aleatórias conforme o bioma: <b>Caatinga</b>, <b>Cerrado</b> ou <b>Mata Ciliar</b>. Ao vencer, o Scan daquela espécie sobe: formas <b>básicas +30%</b>, <b>evoluídas +18%</b> e <b>finais +10%</b>. Ao chegar a <b>100%</b>, abra o <b>Scanner</b> (tecla E) e clique em <b>Gerar</b>. O excedente continua guardado. A conversão cria o Folkmom no nível 5 e precisa de espaço no time.</div></details>' +
         '<details class="help-item"><summary>⚔️ Batalha</summary><div>Escolha <b>Atacar</b> para ver os 4 golpes, <b>Trocar</b> para mudar o Folkmom em campo, <b>Item</b> para curar e <b>Fugir</b> para sair. As barras mostram PV; o log registra dano, vantagens de elemento, EXP, níveis e recompensas. Atalhos: 1-4 golpes, 5 itens, 6 troca, 0 fugir.</div></details>' +
         '<details class="help-item"><summary>🐾 Equipe e seguidor</summary><div>Clique em um slot no canto superior direito para abrir o submenu com <b>Sumário</b>, <b>Ordem do time</b> e <b>Seguidor</b>. O seguidor aparece no mapa e pode ser trocado a qualquer momento.</div></details>' +
         '<details class="help-item"><summary>🎒 Mochila, atalhos e evolução</summary><div>A Mochila tem abas de cura, evolução e chaves. Arraste itens curativos para os atalhos 1-9 ou use o botão <b>→ Atalho</b>. Itens de evolução evoluem Folkmons compatíveis do time. Alguns Folkmons também evoluem por nível ou troca.</div></details>' +
@@ -2614,113 +2941,45 @@ function checkLevelEvolution(mon) {
     }
 }
 
-let currentScanPercent = 0;
-let scanInterval = null;
+function generateScannedFolkmom(speciesId, options) {
+    const opts = options || {};
+    const base = getFolkmomById(speciesId);
+    if(!base) {
+        showToast('Espécie desconhecida no Scanner.', 'error');
+        return false;
+    }
+    const pct = getScanPercent(speciesId);
+    if(pct < 100) {
+        showToast('Scan insuficiente: são necessários 100%.', 'error');
+        return false;
+    }
+    if((player.team || []).length >= 6) {
+        showToast('Time cheio (6/6). Libere espaço para gerar o Folkmom.', 'error');
+        return false;
+    }
 
-function startScan() {
-    if(scanInterval) return;
-    const msg = document.getElementById('phoneMsg');
-    const percentEl = document.getElementById('scanPercent');
-    const statusEl = document.getElementById('scanStatus');
-    if(!msg || !percentEl || !statusEl) {
-        renderPhoneMenu();
-        return;
-    }
-    currentScanPercent = 0;
-    msg.textContent = '';
-    msg.style.color = '';
-    statusEl.textContent = 'Escaneando...';
-    addChatMessage('Local', 'Scan iniciado. Mantenha o sinal até 100%.', 'system');
-    
-    scanInterval = setInterval(() => {
-        currentScanPercent += Math.floor(Math.random() * 15) + 5;
-        if(currentScanPercent > 150) currentScanPercent = 150;
-        percentEl.textContent = currentScanPercent + '%';
-        
-        if(currentScanPercent >= 100) {
-            statusEl.textContent = 'Scan Completo! Pode consertar';
-            statusEl.style.color = '#4CAF50';
-        } else if(currentScanPercent >= 70) {
-            statusEl.textContent = 'Quase completo...';
-        }
-    }, 400);
-}
-
-function fixScan() {
-    if(scanInterval) {
-        clearInterval(scanInterval);
-        scanInterval = null;
-    }
-    
-    const msg = document.getElementById('phoneMsg');
-    const statusEl = document.getElementById('scanStatus');
-    if(!msg || !statusEl) {
-        if(currentScanPercent >= 100) generateScannedFolkmom();
-        return;
-    }
-    
-    if(currentScanPercent < 100) {
-        msg.style.color = '#f87171';
-        msg.textContent = 'Scan insuficiente! Necessário >= 100%';
-        statusEl.textContent = 'Falhou';
-        statusEl.style.color = '#f87171';
-        addChatMessage('Local', 'Falha no Scan: é preciso chegar a 100%.', 'system');
-        return;
-    }
-    
-    msg.style.color = '#38bdf8';
-    msg.textContent = 'Consertando sistema de Scan...';
-    statusEl.textContent = 'Consertando...';
-    statusEl.style.color = '#38bdf8';
-    
-    setTimeout(() => {
-        const success = Math.random() < 0.8 + (currentScanPercent / 500);
-        if(success) {
-            msg.style.color = '#4ade80';
-            msg.textContent = 'Scan consertado com sucesso!';
-            statusEl.textContent = 'Gerando Folkmom...';
-            statusEl.style.color = '#facc15';
-            addChatMessage('Local', 'Scan consertado! Um Folkmom está se materializando...', 'system');
-            setTimeout(() => {
-                generateScannedFolkmom();
-            }, 1500);
-        } else {
-            msg.style.color = '#fb923c';
-            msg.textContent = 'Falha ao consertar. Tente novamente com scan maior!';
-            statusEl.textContent = 'Erro';
-            statusEl.style.color = '#fb923c';
-            currentScanPercent = Math.floor(currentScanPercent * 0.5);
-            const percentEl = document.getElementById('scanPercent');
-            if(percentEl) percentEl.textContent = currentScanPercent + '%';
-            addChatMessage('Local', 'O Scan falhou. Tente novamente.', 'system');
-        }
-    }, 2000);
-}
-
-function generateScannedFolkmom() {
-    // Gerar aleatório dos 50 principais
-    const randIdx = Math.floor(Math.random() * FOLKMONS.main.length);
-    const baseFolkmom = FOLKMONS.main[randIdx];
-    const wildLevel = Math.floor((player.level || 5) + Math.random() * 4 - 1);
-    const wild = createFolkmom(baseFolkmom.id, Math.max(3, wildLevel));
-    markDexSeen(wild.id);
-    const phoneMsg = document.getElementById('phoneMsg');
-    if(phoneMsg) {
-        phoneMsg.innerHTML = '<strong style="color:#4ade80;">Folkmom escaneado!</strong><br>' +
-            monsterSpriteHTML(wild, 'scan-img') + ' ' + wild.name + ' | ' + wild.element + ' | Lv.' + wild.level + '<br>' +
-            '<em>' + wild.folklore + '</em>';
-    }
-    
-    player.stats.scans++;
-    addChatMessage('Local', 'Scan concluído: ' + wild.name + ' Lv.' + wild.level + ' (' + wild.element + ').', 'system');
-    showToast('Folkmom detectado: ' + wild.name + '!', 'success');
+    const mon = createFolkmom(speciesId, 5);
+    if(!mon) return false;
+    mon.hp = mon.maxHp;
+    player.team.push(mon);
+    setScanPercent(speciesId, pct - 100);
+    player.stats.captures = (player.stats.captures || 0) + 1;
+    markDexCaught(speciesId);
+    refreshFollower();
+    updatePartyBar(true);
+    renderHotbar();
+    updateHUD();
+    addChatMessage('Equipe', mon.name + ' foi gerado pelo Scanner (Lv.5)!', 'system');
+    addChatMessage('Batalha', 'Scan convertido: ' + mon.name + ' (100% consumidos, ' + getScanPercent(speciesId) + '% restantes).', 'battle');
+    showToast(mon.name + ' gerado pelo Scanner!', 'success');
     saveGame();
-    
-    setTimeout(() => {
-        closeMenu();
-        // Iniciar batalha para capturar
-        startBattleScan(wild);
-    }, 2000);
+
+    if(opts.closeBattle && currentBattle) {
+        closeBattle();
+    } else if(currentMenuType === 'phone' && isMenuOpen()) {
+        renderPhoneMenu();
+    }
+    return true;
 }
 
 function doTradeMenu() {
@@ -2900,16 +3159,23 @@ function startBattleScan(enemy, options) {
         return;
     }
 
+    const kind = opts.kind || 'wild';
+    const biomeKey = opts.biome && BIOME_CONFIG[opts.biome] ? opts.biome : null;
     currentBattle = {
         enemy: enemy,
         playerMonster: healthy,
-        isScan: opts.isScan !== false,
-        kind: opts.kind || 'scan',
+        isScan: kind === 'wild',
+        kind: kind,
+        biome: biomeKey,
         busy: false,
         over: false,
         lossCounted: false,
         playerAtkMod: 1,
-        enemyAtkMod: 1
+        enemyAtkMod: 1,
+        scanGain: kind === 'wild' ? scanGainFor(enemy) : 0,
+        scanBefore: kind === 'wild' ? getScanPercent(enemy.id) : 0,
+        scanAfter: kind === 'wild' ? getScanPercent(enemy.id) : 0,
+        scanAwarded: false
     };
 
     markDexSeen(enemy.id);
@@ -2923,13 +3189,19 @@ function startBattleScan(enemy, options) {
             modeLabel.style.display = 'block';
             modeLabel.textContent = 'Duelo PvP local · 1v1';
         } else {
-            modeLabel.style.display = 'none';
+            modeLabel.style.display = 'block';
+            const biome = biomeKey ? BIOME_CONFIG[biomeKey] : null;
+            modeLabel.textContent = (biome ? biome.name.toUpperCase() : 'GRAMA ALTA') + ' · ENCONTRO SELVAGEM';
         }
     }
     renderBattleSprites();
     updateBattleUI();
+    const biome = biomeKey ? BIOME_CONFIG[biomeKey] : null;
     addBattleLog((currentBattle.kind === 'pvp' ? 'Duelo PvP! ' : 'Um Folkmom selvagem apareceu: ') + enemy.name + ' Lv.' + enemy.level + '!');
-    addChatMessage('Batalha', (currentBattle.kind === 'pvp' ? 'Duelo PvP contra ' : 'Batalha selvagem contra ') + enemy.name + ' Lv.' + enemy.level + '.', 'battle');
+    if(currentBattle.kind !== 'pvp') {
+        addBattleLog('Scan: +' + currentBattle.scanGain + '% ao vencer · estágio ' + scanStageMeta(enemy.id).name + '.', 'log-scan');
+    }
+    addChatMessage('Batalha', (currentBattle.kind === 'pvp' ? 'Duelo PvP contra ' : 'Batalha selvagem' + (biome ? ' na ' + biome.name : '') + ' contra ') + enemy.name + ' Lv.' + enemy.level + '.', 'battle');
     battleMenu('main');
 }
 
@@ -2948,6 +3220,32 @@ function setHpBar(barId, textId, mon) {
     document.getElementById(textId).textContent = Math.max(0, mon.hp) + '/' + mon.maxHp;
 }
 
+function updateBattleScanPanel() {
+    const panel = document.getElementById('battleScanPanel');
+    if(!panel) return;
+    if(!currentBattle || currentBattle.kind === 'pvp') {
+        panel.style.display = 'none';
+        return;
+    }
+    const pct = currentBattle.scanAwarded ? currentBattle.scanAfter : currentBattle.scanBefore;
+    const gain = currentBattle.scanGain || scanGainFor(currentBattle.enemy);
+    const stage = scanStageMeta(currentBattle.enemy.id);
+    panel.style.display = 'block';
+    panel.classList.toggle('ready', pct >= 100);
+    document.getElementById('battleScanPercent').textContent = pct + '%';
+    document.getElementById('battleScanFill').style.width = Math.min(100, pct) + '%';
+    document.getElementById('battleScanFill').classList.toggle('ready', pct >= 100);
+    const hint = document.getElementById('battleScanHint');
+    hint.classList.toggle('ready', pct >= 100);
+    if(currentBattle.scanAwarded) {
+        hint.textContent = pct >= 100
+            ? '+' + gain + '% · Scan pronto para gerar!'
+            : '+' + gain + '% · total ' + pct + '% · ' + stage.name;
+    } else {
+        hint.textContent = '+' + gain + '% ao vencer · ' + stage.name;
+    }
+}
+
 function updateBattleUI() {
     if(!currentBattle) return;
     const pMon = currentBattle.playerMonster;
@@ -2958,6 +3256,7 @@ function updateBattleUI() {
     document.getElementById('enemyLevel').textContent = eMon.level;
     setHpBar('playerHpBar', 'playerHpText', pMon);
     setHpBar('enemyHpBar', 'enemyHpText', eMon);
+    updateBattleScanPanel();
     updatePartyBar();
 }
 
@@ -3175,6 +3474,23 @@ function finishBattleLoss() {
     showToast('Seu time foi curado. Tente novamente!', 'info');
 }
 
+function awardScanFor(mon) {
+    if(!mon || !currentBattle) return { gain: 0, before: 0, after: 0, ready: false };
+    const gain = currentBattle.scanGain || scanGainFor(mon);
+    const before = getScanPercent(mon.id);
+    const after = Math.min(SCAN_MAX, before + gain);
+    setScanPercent(mon.id, after);
+    currentBattle.scanAwarded = true;
+    currentBattle.scanBefore = before;
+    currentBattle.scanAfter = after;
+    player.stats.scans = (player.stats.scans || 0) + 1;
+    addBattleLog('Scan de ' + mon.name + ': +' + gain + '% (' + before + '% → ' + after + '%).', 'log-scan');
+    if(before < 100 && after >= 100) {
+        addBattleLog('Scan completo! Abra o Scanner para gerar ' + mon.name + '.', 'log-good');
+    }
+    return { gain: gain, before: before, after: after, ready: after >= 100 };
+}
+
 function handleEnemyFaint() {
     if(!currentBattle) return;
     currentBattle.over = true;
@@ -3189,20 +3505,37 @@ function handleEnemyFaint() {
     else player.stats.bp = (player.stats.bp || 0) + 5;
     const money = 20 + e.level * 8;
     player.money = (player.money || 0) + money;
+    let scanResult = null;
+    if(!pvp) scanResult = awardScanFor(e);
     updateHUD();
     gainBattleExp(p, e);
     updatePartyBar(true);
+    updateBattleScanPanel();
     saveGame();
 
     let html = '<div class="battle-menu-heading">Vitória! +' + money + ' moedas' +
         (pvp ? ' · +12 BP' : ' · +5 BP') + '</div>';
-    if(currentBattle.isScan) {
-        if(player.team.length < 6) {
-            html += '<button class="battle-btn battle-capture" onclick="finishBattleCapture(true)">📥 Adicionar ' + e.name + ' ao time</button>';
-        } else {
-            html += '<div class="battle-menu-empty">Time cheio (6/6). Deixe este Folkmom ir.</div>';
+    if(!pvp) {
+        const pct = getScanPercent(e.id);
+        const stage = scanStageMeta(e.id);
+        const gained = scanResult ? scanResult.gain : (currentBattle.scanGain || 0);
+        html += '<div class="battle-scan-result ' + (pct >= 100 ? 'ready' : '') + '">' +
+            '<div class="battle-scan-result-head"><span>SCAN · ' + stage.name + '</span><b>' + pct + '%</b></div>' +
+            '<div class="battle-scan-result-track"><i style="width:' + Math.min(100, pct) + '%"></i></div>' +
+            '<div class="battle-scan-result-copy">' +
+                (pct >= 100
+                    ? 'Scan completo! O excedente continua guardado.'
+                    : '+' + gained + '% guardado. Faltam ' + Math.max(0, 100 - pct) + '% para gerar.') +
+            '</div>' +
+        '</div>';
+        if(pct >= 100) {
+            if(player.team.length < 6) {
+                html += '<button class="battle-btn battle-capture" onclick="finishBattleCapture(true)">🧬 Gerar ' + e.name + ' (100% de Scan)</button>';
+            } else {
+                html += '<div class="battle-menu-empty">Scan pronto, mas o time está cheio (6/6). Libere espaço e gere pelo Scanner.</div>';
+            }
         }
-        html += '<button class="battle-btn battle-back" onclick="finishBattleCapture(false)">Deixar ir</button>';
+        html += '<button class="battle-btn battle-back" onclick="finishBattleCapture(false)">🌿 Voltar ao mapa</button>';
     } else {
         html += '<button class="battle-btn battle-back" onclick="closeBattle()">Continuar</button>';
     }
@@ -3234,20 +3567,7 @@ function finishBattleCapture(add) {
     if(!currentBattle) return;
     const e = currentBattle.enemy;
     if(add) {
-        if(player.team.length >= 6) {
-            showToast('Time cheio! Máximo 6 Folkmons.', 'error');
-            return;
-        }
-        e.hp = e.maxHp;
-        e.exp = 0;
-        e.expToNext = e.level * 120;
-        player.team.push(e);
-        player.stats.captures = (player.stats.captures || 0) + 1;
-        markDexCaught(e.id);
-        addChatMessage('Equipe', e.name + ' foi adicionado ao time!', 'system');
-        showToast(e.name + ' entrou no time!', 'success');
-        refreshFollower();
-        updatePartyBar(true);
+        if(!generateScannedFolkmom(e.id, { closeBattle: false })) return;
     }
     closeBattle();
 }
@@ -3281,13 +3601,17 @@ function switchBattleMonster(index) {
 }
 
 function closeBattle() {
+    const wasWild = !!(currentBattle && currentBattle.kind !== 'pvp');
     document.getElementById('battleScreen').style.display = 'none';
     document.getElementById('battleLog').innerHTML = '';
     document.getElementById('battleMainActions').innerHTML = '';
     document.getElementById('battlePlayerName').style.color = '';
     const modeLabel = document.getElementById('battleModeLabel');
     if(modeLabel) modeLabel.style.display = 'none';
+    const scanPanel = document.getElementById('battleScanPanel');
+    if(scanPanel) scanPanel.style.display = 'none';
     currentBattle = null;
+    if(wasWild) encounterCooldown = Math.max(encounterCooldown, 6);
     saveGame();
     updateHUD();
     updatePartyBar(true);

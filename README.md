@@ -1,9 +1,10 @@
 # Folkmons — protótipo jogável
 
-Jogo de criaturas inspirado no folclore brasileiro. O objetivo é explorar o
-mapa, escanear criaturas com o celular do jogo, batalhar, evoluir e trocar
-Folkmons. Não usa nomes, sprites nem mecânicas de franquias de criaturas
-comerciais: a captura é feita pelo **Scan** do celular.
+Jogo de criaturas inspirado no folclore brasileiro. O objetivo é explorar os
+biomas, encontrar Folkmons selvagens na grama alta, batalhar, evoluir e trocar.
+Não usa nomes, sprites nem mecânicas de franquias de criaturas comerciais: a
+captura é feita pelo **Scan** do Scanner, que acumula dados de cada espécie até
+100%.
 
 ## O que já está pronto
 
@@ -17,6 +18,13 @@ comerciais: a captura é feita pelo **Scan** do celular.
   FPS e ping no canto superior esquerdo; equipe no canto superior direito;
   chat com abas no canto inferior esquerdo; menu principal no canto inferior
   direito; atalhos 1–9 no centro inferior e botão de **Scan** em destaque.
+- **Encontros aleatórios por bioma**: grama alta de **Caatinga**, **Cerrado** e
+  **Mata Ciliar**, cada uma com elementos, níveis e frequência de evolução
+  próprios. Andar na grama inicia batalhas sem precisar de Scan no mapa.
+- **Scanner Folclórico**: o Scan é por espécie. Formas **básicas** rendem
+  **+30%**, **evoluídas +18%** e **finais +10%** por vitória. Ao atingir
+  **100%**, o Scanner gera o Folkmom capturado e mantém o excedente. A tela de
+  batalha mostra a barrinha e o ganho previsto.
 - **Tela adaptável**: o cliente 800×600 escala para caber na janela sem cortar
   a HUD; a batalha também se ajusta e usa o mesmo tema escuro.
 - **Barra da equipe clicável**: abre o submenu com **Sumário**, **Ordem do
@@ -31,18 +39,19 @@ comerciais: a captura é feita pelo **Scan** do celular.
 - **Arena PvP local 1v1**, ranking, rating e BP. O online chega quando a conta
   na nuvem for ativada.
 - **Chat funcional** com canais Local, Global, Comércio, Sussurro, Equipe e
-  Batalha; mensagens do sistema registram scan, captura, cura, evolução,
+  Batalha; mensagens do sistema registram Scan, captura, cura, evolução,
   compras e batalhas.
 - **Menu de batalha completo**: 4 golpes por Folkmom, vantagens de tipo,
-  troca de Folkmom, itens, fuga, EXP, level up, recompensa em moedas e captura
-  ao vencer. Atalhos de combate: **1–4** golpes, **5** itens, **6** troca,
-  **0** fugir.
+  troca de Folkmom, itens, fuga, EXP, level up, recompensa em moedas e barrinha
+  de Scan ao vencer. Atalhos de combate: **1–4** golpes, **5** itens, **6**
+  troca, **0** fugir.
 - 3 iniciais: **Iarinha** (Água), **Caiporinha** (Grama) e **Saci-Embrião**
   (Fogo).
 - 50 famílias de Folkmons do folclore, com 2 evoluções cada (153 formas no
   total).
 - Evoluções por nível, por item e por troca.
-- Mapa top-down, coleta de itens, Scan, batalha por turnos, time e trocas.
+- Mapa top-down, coleta de itens, encontros selvagens, batalha por turnos, time
+  e trocas.
 - Sprites em PNG (128×128 e 64×64) com fallback para emoji se a imagem ainda
   não existir.
 - Galeria para revisar os 153 sprites: `galeria.html`.
@@ -57,11 +66,15 @@ comerciais: a captura é feita pelo **Scan** do celular.
 3. Escolha seu Folkmom inicial.
 4. Ande pelo mapa com **WASD** ou setas; o treinador aparece com a etiqueta
    “VOCÊ”.
-5. Pise nos itens, abra o celular e use o **Scan**.
-6. Quando o Scan chegar a 100%, conserte o Scan para gerar o Folkmom.
-7. No menu de batalha, escolha **Atacar** (4 golpes), **Trocar**, **Item** ou
-   **Fugir**. Ao vencer, você ganha EXP, moedas e pode adicionar o Folkmom ao
-   time.
+5. Procure uma área de **grama alta**. Caatinga, Cerrado e Mata Ciliar têm
+   cores e pools de Folkmons diferentes. Andar em cada tile pode iniciar uma
+   batalha aleatória.
+6. Na batalha, escolha **Atacar** (4 golpes), **Trocar**, **Item** ou
+   **Fugir**. O painel **SCAN** mostra o percentual atual e quanto a espécie
+   rende ao vencer.
+7. Ao vencer, o Scan da espécie sobe. Formas básicas rendem mais; formas finais
+   rendem menos. Ao chegar a **100%**, use o botão de geração na vitória ou abra
+   o **Scanner** (tecla **E**) e clique em **Gerar**.
 8. Use os menus do canto inferior direito: **Mochila** (itens/atalhos),
    **Enciclore**, **Cartão** (ficha do treinador), **GTL** (mercado),
    **PvP** (duelos locais), **Social** (amigos, guilda, correio e trocas) e
@@ -76,6 +89,29 @@ comerciais: a captura é feita pelo **Scan** do celular.
     paisagem, a área do jogo fica maior.
 12. Quando aparecer uma mensagem, toque nela ou em **Continuar** para avançar.
     O botão **Cancelar** fecha a mensagem e limpa a fila de avisos.
+
+## Encontros, biomas e Scan
+
+| Bioma | Elementos favorecidos | Estilo |
+| --- | --- | --- |
+| **Caatinga** | Fogo, Terra, Trevas, Elétrico | Terra seca; encontros um pouco mais fortes |
+| **Cerrado** | Grama, Fogo, Terra, Vento | Campos abertos e arbustos |
+| **Mata Ciliar** | Água, Grama, Vento | Umidade e folhas largas |
+
+- A cada tile novo de grama alta há uma chance de encontro (começa em 14% e
+  sobe com os passos, até 34%). Depois de uma batalha há um intervalo de
+  segurança.
+- A distribuição de estágios é aproximadamente **68% básicos, 26% evoluídos e
+  6% finais**, variando por bioma.
+- O nível selvagem acompanha o Folkmom saudável do seu time. Formas mais
+  evoluídas aparecem alguns níveis acima.
+- O Scan é individual por espécie e fica salvo no `player.scanData`.
+- **100% é o mínimo para gerar**. A conversão consome 100% e preserva o
+  excedente. Ela cria o Folkmom no **nível 5**, com PV cheio, e exige espaço no
+  time (máximo 6).
+- Se o time estiver cheio, o Scan fica guardado no Scanner para depois.
+
+O guia detalhado fica em [`docs/encontros_scan.md`](docs/encontros_scan.md).
 
 Se o navegador bloquear alguma coisa ao abrir direto pelo `file://`, rode um
 servidor local:
@@ -138,7 +174,7 @@ index_new.html        cópia de trabalho
 index_antigo.html     protótipo antigo (backup)
 style.css             estilos do jogo, HUD, chat, menus e batalha
 folkmons_data.js      dados dos 153 Folkmons, itens e evoluções
-game_new.js           lógica do jogo (login, mapa, HUD, chat, scan, batalha, menus)
+game_new.js           lógica do jogo (login, mapa, biomas, HUD, chat, Scanner, batalha, menus)
 cloud_config.js       URL e chave anon do Supabase
 cloud_auth.js         login/cadastro/senha/save na nuvem
 vendor/supabase.js    SDK do Supabase (para funcionar sem CDN)
@@ -165,7 +201,7 @@ Com a nuvem ligada:
 - **Menu do Jogo → Trocar senha** para alterar a senha logado;
 - aba **Redefinir Senha** para receber link por e-mail;
 - save (time, itens, posição, evoluções, Enciclore, atalhos, seguidor,
-  amigos e guilda local) sincronizado na conta.
+  **Scan por espécie**, amigos e guilda local) sincronizado na conta.
 
 A chave **anon** é pública e pode ficar no site. Nunca use a
 **service_role** no navegador.

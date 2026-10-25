@@ -808,6 +808,27 @@ body {
     text-transform: uppercase;
 }
 
+.scan-fab-badge {
+    position: absolute;
+    top: -7px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #052e16;
+    border-radius: 999px;
+    background: #22c55e;
+    color: #052e16;
+    font-size: 8px;
+    font-style: normal;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: 0 0 0 2px rgba(2, 6, 23, 0.65);
+}
+
 .party-context {
     position: absolute;
     top: 94px;
@@ -1313,6 +1334,267 @@ body {
 .team-slot.selected {
     border-color: var(--gold);
     background: rgba(250, 204, 21, 0.08);
+}
+
+.scan-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 12px;
+    background: radial-gradient(circle at 8% 20%, rgba(34, 211, 238, 0.16), transparent 42%),
+                linear-gradient(135deg, rgba(8, 47, 73, 0.82), rgba(15, 23, 42, 0.92));
+}
+
+.scan-hero-icon {
+    flex: 0 0 auto;
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(34, 211, 238, 0.45);
+    background: rgba(2, 6, 23, 0.55);
+    font-size: 27px;
+    box-shadow: 0 0 22px rgba(34, 211, 238, 0.22);
+}
+
+.scan-hero-copy { min-width: 0; }
+.scan-kicker {
+    display: block;
+    color: #67e8f9;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+.scan-hero h3 {
+    margin: 2px 0 4px;
+    color: #f8fafc;
+    font-size: 18px;
+    text-align: left;
+}
+.scan-hero p {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 10px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.scan-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+    margin-bottom: 10px;
+}
+.scan-summary-grid > div {
+    padding: 7px 8px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.6);
+    text-align: center;
+}
+.scan-summary-grid strong {
+    display: block;
+    color: #facc15;
+    font-size: 16px;
+    line-height: 1.1;
+}
+.scan-summary-grid span {
+    color: #94a3b8;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.scan-biomes {
+    display: grid;
+    gap: 5px;
+    margin-bottom: 11px;
+}
+.scan-biome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(2, 6, 23, 0.34);
+    color: #94a3b8;
+    font-size: 8.5px;
+    line-height: 1.35;
+}
+.scan-biome i {
+    flex: 0 0 auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    box-shadow: 0 0 7px currentColor;
+}
+.scan-biome b {
+    flex: 0 0 auto;
+    color: #e2e8f0;
+    font-size: 9px;
+}
+
+.scan-empty {
+    padding: 22px 16px;
+    margin-bottom: 10px;
+    border: 1px dashed rgba(148, 163, 184, 0.3);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.42);
+    text-align: center;
+}
+.scan-empty strong {
+    display: block;
+    margin-top: 7px;
+    color: #e2e8f0;
+    font-size: 13px;
+}
+.scan-empty p {
+    max-width: 390px;
+    margin: 5px auto 0;
+    color: #94a3b8;
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.scan-card-list {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.scan-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border: 1px solid rgba(56, 189, 248, 0.24);
+    border-radius: 10px;
+    background: linear-gradient(90deg, rgba(8, 47, 73, 0.42), rgba(15, 23, 42, 0.45));
+}
+.scan-card.ready {
+    border-color: rgba(74, 222, 128, 0.52);
+    background: linear-gradient(90deg, rgba(5, 46, 22, 0.62), rgba(15, 23, 42, 0.5));
+}
+.scan-card-sprite {
+    flex: 0 0 auto;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(2, 6, 23, 0.48);
+    font-size: 28px;
+}
+.monster-img.scan-card-img {
+    width: 46px;
+    height: 46px;
+}
+.scan-card-body { flex: 1 1 auto; min-width: 0; }
+.scan-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+.scan-card-head strong {
+    color: #f8fafc;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.scan-card-head b {
+    flex: 0 0 auto;
+    color: #67e8f9;
+    font-size: 13px;
+}
+.scan-card.ready .scan-card-head b { color: #86efac; }
+.scan-card-meta {
+    margin-top: 1px;
+    color: #94a3b8;
+    font-size: 8.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.scan-card-meta span { color: #7dd3fc; }
+.scan-card.ready .scan-card-meta span { color: #86efac; }
+.scan-card-track {
+    height: 5px;
+    margin-top: 5px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(2, 6, 23, 0.76);
+}
+.scan-card-track i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #0284c7, #22d3ee);
+    transition: width 0.35s ease;
+}
+.scan-card-track i.ready {
+    background: linear-gradient(90deg, #16a34a, #a3e635);
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+}
+.scan-card-foot {
+    margin-top: 3px;
+    color: #94a3b8;
+    font-size: 8px;
+}
+.scan-ready-label { color: #86efac; font-weight: 700; }
+.scan-generate {
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    border: 1px solid rgba(74, 222, 128, 0.55);
+    border-radius: 7px;
+    background: rgba(20, 83, 45, 0.85);
+    color: #dcfce7;
+    font-size: 9px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.scan-generate:hover:not(:disabled) {
+    background: rgba(22, 163, 74, 0.95);
+    color: #fff;
+}
+.scan-generate:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.scan-locked {
+    flex: 0 0 auto;
+    width: 29px;
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.55;
+}
+.scan-notes {
+    display: grid;
+    gap: 5px;
+    padding: 9px 10px;
+    border-left: 3px solid rgba(250, 204, 21, 0.5);
+    border-radius: 0 7px 7px 0;
+    background: rgba(250, 204, 21, 0.055);
+    color: #94a3b8;
+    font-size: 8.5px;
+    line-height: 1.45;
+}
+.scan-notes b { color: #e2e8f0; }
+
+@media (max-width: 620px) {
+    .scan-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .scan-card { flex-wrap: wrap; }
+    .scan-card-body { flex-basis: calc(100% - 72px); }
+    .scan-generate { width: 100%; }
+    .scan-locked { display: none; }
 }
 
 .monster-sprite {
@@ -1857,6 +2139,128 @@ body {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
 }
 
+.battle-scan-panel {
+    margin-top: 7px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.battle-scan-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.battle-scan-head b {
+    color: #facc15;
+    font-size: 10px;
+    letter-spacing: 0;
+}
+
+.battle-scan-track {
+    height: 6px;
+    margin-top: 3px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(2, 6, 23, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+#battleScanFill {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #0284c7, #22d3ee);
+    transition: width 0.5s ease;
+}
+
+#battleScanFill.ready {
+    background: linear-gradient(90deg, #16a34a, #a3e635);
+    box-shadow: 0 0 9px rgba(74, 222, 128, 0.65);
+}
+
+.battle-scan-hint {
+    margin-top: 3px;
+    color: #94a3b8;
+    font-size: 7px;
+    line-height: 1.3;
+}
+
+.battle-scan-hint.ready {
+    color: #86efac;
+    font-weight: 700;
+}
+
+.battle-scan-result {
+    grid-column: 1 / -1;
+    padding: 8px 9px;
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    border-radius: 8px;
+    background: rgba(8, 47, 73, 0.66);
+}
+
+.battle-scan-result.ready {
+    border-color: rgba(74, 222, 128, 0.55);
+    background: rgba(5, 46, 22, 0.72);
+}
+
+.battle-scan-result-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #7dd3fc;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.battle-scan-result.ready .battle-scan-result-head {
+    color: #86efac;
+}
+
+.battle-scan-result-head b {
+    color: #fff;
+    font-size: 12px;
+}
+
+.battle-scan-result-track {
+    height: 7px;
+    margin-top: 5px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(2, 6, 23, 0.82);
+}
+
+.battle-scan-result-track i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+}
+
+.battle-scan-result.ready .battle-scan-result-track i {
+    background: linear-gradient(90deg, #22c55e, #a3e635);
+}
+
+.battle-scan-result-copy {
+    margin-top: 4px;
+    color: #bae6fd;
+    font-size: 8px;
+    line-height: 1.35;
+}
+
+.battle-scan-result.ready .battle-scan-result-copy {
+    color: #bbf7d0;
+}
+
 .enemy-name,
 .player-name {
     font-size: 11px;
@@ -2038,6 +2442,7 @@ body {
 .battle-log .log-bad { color: #f87171; font-weight: 700; }
 .battle-log .log-warn { color: #fbbf24; }
 .battle-log .log-damage { color: #94a3b8; }
+.battle-log .log-scan { color: #67e8f9; font-weight: 700; }
 
 .battle-mode-label {
     position: absolute;
