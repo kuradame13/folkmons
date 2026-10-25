@@ -1,0 +1,713 @@
+[
+  {
+    "id": "FM024B",
+    "name": "Borboleta das Almas",
+    "prompt": "pixel art game sprite of Borboleta das Almas, a grey moth spirit with dusty wings and glowing eyespots, final evolution, majestic and imposing, glowing shadow and wind aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM024B.png",
+    "out": "assets/sprites/FM024B.png",
+    "out64": "assets/sprites64/FM024B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM025",
+    "name": "Coruja-Pequena",
+    "prompt": "pixel art game sprite of Coruja-Pequena, small a small mystic owl with feathered ear tufts and moonlit eyes, cute chibi proportions, wind element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM025.png",
+    "out": "assets/sprites/FM025.png",
+    "out64": "assets/sprites64/FM025.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM025A",
+    "name": "Coruja Noturna",
+    "prompt": "pixel art game sprite of Coruja Noturna, a small mystic owl with feathered ear tufts and moonlit eyes, evolved form, larger and more powerful, extra wind and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM025A.png",
+    "out": "assets/sprites/FM025A.png",
+    "out64": "assets/sprites64/FM025A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM025B",
+    "name": "Coruja dos Presságios",
+    "prompt": "pixel art game sprite of Coruja dos Presságios, a small mystic owl with feathered ear tufts and moonlit eyes, final evolution, majestic and imposing, glowing wind and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM025B.png",
+    "out": "assets/sprites/FM025B.png",
+    "out64": "assets/sprites64/FM025B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM026",
+    "name": "Tatu-Bola",
+    "prompt": "pixel art game sprite of Tatu-Bola, small a ball armadillo with a segmented shell and curious eyes, cute chibi proportions, earth element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM026.png",
+    "out": "assets/sprites/FM026.png",
+    "out64": "assets/sprites64/FM026.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM026A",
+    "name": "Tatu-Rolha",
+    "prompt": "pixel art game sprite of Tatu-Rolha, a ball armadillo with a segmented shell and curious eyes, evolved form, larger and more powerful, extra earth details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM026A.png",
+    "out": "assets/sprites/FM026A.png",
+    "out64": "assets/sprites64/FM026A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM026B",
+    "name": "Tatu-Montanha",
+    "prompt": "pixel art game sprite of Tatu-Montanha, a ball armadillo with a segmented shell and curious eyes, final evolution, majestic and imposing, glowing earth and nature aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM026B.png",
+    "out": "assets/sprites/FM026B.png",
+    "out64": "assets/sprites64/FM026B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM027",
+    "name": "Lagarto-Verde",
+    "prompt": "pixel art game sprite of Lagarto-Verde, small a green lizard with leaf-like scales and a long tail, cute chibi proportions, nature element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM027.png",
+    "out": "assets/sprites/FM027.png",
+    "out64": "assets/sprites64/FM027.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM027A",
+    "name": "Lagarto-Camaleão",
+    "prompt": "pixel art game sprite of Lagarto-Camaleão, a green lizard with leaf-like scales and a long tail, evolved form, larger and more powerful, extra nature and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM027A.png",
+    "out": "assets/sprites/FM027A.png",
+    "out64": "assets/sprites64/FM027A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM027B",
+    "name": "Camaleão Místico",
+    "prompt": "pixel art game sprite of Camaleão Místico, a green lizard with leaf-like scales and a long tail, final evolution, majestic and imposing, glowing nature and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM027B.png",
+    "out": "assets/sprites/FM027B.png",
+    "out64": "assets/sprites64/FM027B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM028",
+    "name": "Piranha-Curiosa",
+    "prompt": "pixel art game sprite of Piranha-Curiosa, small a mystic piranha with razor teeth and red glowing fins, cute chibi proportions, water element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM028.png",
+    "out": "assets/sprites/FM028.png",
+    "out64": "assets/sprites64/FM028.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM028A",
+    "name": "Cardume-Mágico",
+    "prompt": "pixel art game sprite of Cardume-Mágico, a mystic piranha with razor teeth and red glowing fins, evolved form, larger and more powerful, extra water and lightning details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM028A.png",
+    "out": "assets/sprites/FM028A.png",
+    "out64": "assets/sprites64/FM028A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM028B",
+    "name": "Piranha-Rei",
+    "prompt": "pixel art game sprite of Piranha-Rei, a mystic piranha with razor teeth and red glowing fins, final evolution, majestic and imposing, glowing water and lightning aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM028B.png",
+    "out": "assets/sprites/FM028B.png",
+    "out64": "assets/sprites64/FM028B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM029",
+    "name": "Aranha-Teceria",
+    "prompt": "pixel art game sprite of Aranha-Teceria, small a weaver spider with intricate web patterns on its abdomen, cute chibi proportions, nature element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM029.png",
+    "out": "assets/sprites/FM029.png",
+    "out64": "assets/sprites64/FM029.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM029A",
+    "name": "Aranha-Teia Mágica",
+    "prompt": "pixel art game sprite of Aranha-Teia Mágica, a weaver spider with intricate web patterns on its abdomen, evolved form, larger and more powerful, extra nature and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM029A.png",
+    "out": "assets/sprites/FM029A.png",
+    "out64": "assets/sprites64/FM029A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM029B",
+    "name": "Nephila Encantada",
+    "prompt": "pixel art game sprite of Nephila Encantada, a weaver spider with intricate web patterns on its abdomen, final evolution, majestic and imposing, glowing nature and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM029B.png",
+    "out": "assets/sprites/FM029B.png",
+    "out64": "assets/sprites64/FM029B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM030",
+    "name": "Vespa-Amarela",
+    "prompt": "pixel art game sprite of Vespa-Amarela, small a yellow wasp with electric sparks around its wings, cute chibi proportions, lightning element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM030.png",
+    "out": "assets/sprites/FM030.png",
+    "out64": "assets/sprites64/FM030.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM030A",
+    "name": "Enxame-Fantasma",
+    "prompt": "pixel art game sprite of Enxame-Fantasma, a yellow wasp with electric sparks around its wings, evolved form, larger and more powerful, extra lightning and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM030A.png",
+    "out": "assets/sprites/FM030A.png",
+    "out64": "assets/sprites64/FM030A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM030B",
+    "name": "Vespa-Rei",
+    "prompt": "pixel art game sprite of Vespa-Rei, a yellow wasp with electric sparks around its wings, final evolution, majestic and imposing, glowing lightning and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM030B.png",
+    "out": "assets/sprites/FM030B.png",
+    "out64": "assets/sprites64/FM030B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM031",
+    "name": "Caranguejo-Místico",
+    "prompt": "pixel art game sprite of Caranguejo-Místico, small a mystic crab with coral growths on its shell, cute chibi proportions, water element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM031.png",
+    "out": "assets/sprites/FM031.png",
+    "out64": "assets/sprites64/FM031.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM031A",
+    "name": "Caranguejo-Cascudo",
+    "prompt": "pixel art game sprite of Caranguejo-Cascudo, a mystic crab with coral growths on its shell, evolved form, larger and more powerful, extra water and earth details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM031A.png",
+    "out": "assets/sprites/FM031A.png",
+    "out64": "assets/sprites64/FM031A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM031B",
+    "name": "Sirigaita Mística",
+    "prompt": "pixel art game sprite of Sirigaita Mística, a mystic crab with coral growths on its shell, final evolution, majestic and imposing, glowing water and earth aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM031B.png",
+    "out": "assets/sprites/FM031B.png",
+    "out64": "assets/sprites64/FM031B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM032",
+    "name": "Camaleão-Roxo",
+    "prompt": "pixel art game sprite of Camaleão-Roxo, small a purple chameleon with swirling illusion patterns, cute chibi proportions, nature element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM032.png",
+    "out": "assets/sprites/FM032.png",
+    "out64": "assets/sprites64/FM032.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM032A",
+    "name": "Lagartixa-Ilusionista",
+    "prompt": "pixel art game sprite of Lagartixa-Ilusionista, a purple chameleon with swirling illusion patterns, evolved form, larger and more powerful, extra nature and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM032A.png",
+    "out": "assets/sprites/FM032A.png",
+    "out64": "assets/sprites64/FM032A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM032B",
+    "name": "Camaleão das Ilusões",
+    "prompt": "pixel art game sprite of Camaleão das Ilusões, a purple chameleon with swirling illusion patterns, final evolution, majestic and imposing, glowing nature and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM032B.png",
+    "out": "assets/sprites/FM032B.png",
+    "out64": "assets/sprites64/FM032B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM033",
+    "name": "Tamanduá-Místico",
+    "prompt": "pixel art game sprite of Tamanduá-Místico, small a mystic anteater with a long snout and a shaggy mane, cute chibi proportions, earth element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM033.png",
+    "out": "assets/sprites/FM033.png",
+    "out64": "assets/sprites64/FM033.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM033A",
+    "name": "Tamanduá-Fantasma",
+    "prompt": "pixel art game sprite of Tamanduá-Fantasma, a mystic anteater with a long snout and a shaggy mane, evolved form, larger and more powerful, extra earth and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM033A.png",
+    "out": "assets/sprites/FM033A.png",
+    "out64": "assets/sprites64/FM033A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM033B",
+    "name": "Tamanduá-Bandeira Eterno",
+    "prompt": "pixel art game sprite of Tamanduá-Bandeira Eterno, a mystic anteater with a long snout and a shaggy mane, final evolution, majestic and imposing, glowing earth and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM033B.png",
+    "out": "assets/sprites/FM033B.png",
+    "out64": "assets/sprites64/FM033B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM034",
+    "name": "Capivara-Mística",
+    "prompt": "pixel art game sprite of Capivara-Mística, small a calm mystic capybara with river plants growing on its back, cute chibi proportions, water element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM034.png",
+    "out": "assets/sprites/FM034.png",
+    "out64": "assets/sprites64/FM034.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM034A",
+    "name": "Capivara-Protetora",
+    "prompt": "pixel art game sprite of Capivara-Protetora, a calm mystic capybara with river plants growing on its back, evolved form, larger and more powerful, extra water and nature details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM034A.png",
+    "out": "assets/sprites/FM034A.png",
+    "out64": "assets/sprites64/FM034A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM034B",
+    "name": "Capivara-Rei dos Rios",
+    "prompt": "pixel art game sprite of Capivara-Rei dos Rios, a calm mystic capybara with river plants growing on its back, final evolution, majestic and imposing, glowing water and nature aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM034B.png",
+    "out": "assets/sprites/FM034B.png",
+    "out64": "assets/sprites64/FM034B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM035",
+    "name": "Onça-Pintada",
+    "prompt": "pixel art game sprite of Onça-Pintada, small an enchanted jaguar with glowing rosettes and emerald eyes, cute chibi proportions, nature element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM035.png",
+    "out": "assets/sprites/FM035.png",
+    "out64": "assets/sprites64/FM035.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM035A",
+    "name": "Onça-Fantasma",
+    "prompt": "pixel art game sprite of Onça-Fantasma, an enchanted jaguar with glowing rosettes and emerald eyes, evolved form, larger and more powerful, extra nature and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM035A.png",
+    "out": "assets/sprites/FM035A.png",
+    "out64": "assets/sprites64/FM035A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM035B",
+    "name": "Jaguatirica Mística",
+    "prompt": "pixel art game sprite of Jaguatirica Mística, an enchanted jaguar with glowing rosettes and emerald eyes, final evolution, majestic and imposing, glowing nature and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM035B.png",
+    "out": "assets/sprites/FM035B.png",
+    "out64": "assets/sprites64/FM035B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM036",
+    "name": "Jacaré-Místico",
+    "prompt": "pixel art game sprite of Jacaré-Místico, small a mystic caiman with armored scales and glowing yellow eyes, cute chibi proportions, water element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM036.png",
+    "out": "assets/sprites/FM036.png",
+    "out64": "assets/sprites64/FM036.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM036A",
+    "name": "Jacaré-Cascudo",
+    "prompt": "pixel art game sprite of Jacaré-Cascudo, a mystic caiman with armored scales and glowing yellow eyes, evolved form, larger and more powerful, extra water and earth details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM036A.png",
+    "out": "assets/sprites/FM036A.png",
+    "out64": "assets/sprites64/FM036A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM036B",
+    "name": "Jacaré-Rei dos Pantanais",
+    "prompt": "pixel art game sprite of Jacaré-Rei dos Pantanais, a mystic caiman with armored scales and glowing yellow eyes, final evolution, majestic and imposing, glowing water and earth aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM036B.png",
+    "out": "assets/sprites/FM036B.png",
+    "out64": "assets/sprites64/FM036B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM037",
+    "name": "Gambá-Místico",
+    "prompt": "pixel art game sprite of Gambá-Místico, small a mystic skunk with smoky purple stripes, cute chibi proportions, shadow element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM037.png",
+    "out": "assets/sprites/FM037.png",
+    "out64": "assets/sprites64/FM037.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM037A",
+    "name": "Gambá-Fedorento",
+    "prompt": "pixel art game sprite of Gambá-Fedorento, a mystic skunk with smoky purple stripes, evolved form, larger and more powerful, extra shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM037A.png",
+    "out": "assets/sprites/FM037A.png",
+    "out64": "assets/sprites64/FM037A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM037B",
+    "name": "Gambá das Sombras",
+    "prompt": "pixel art game sprite of Gambá das Sombras, a mystic skunk with smoky purple stripes, final evolution, majestic and imposing, glowing shadow and fire aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM037B.png",
+    "out": "assets/sprites/FM037B.png",
+    "out64": "assets/sprites64/FM037B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM038",
+    "name": "Quati-Místico",
+    "prompt": "pixel art game sprite of Quati-Místico, small a mystic coati with a ringed tail and bright eyes, cute chibi proportions, nature element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM038.png",
+    "out": "assets/sprites/FM038.png",
+    "out64": "assets/sprites64/FM038.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM038A",
+    "name": "Quati-Travesso",
+    "prompt": "pixel art game sprite of Quati-Travesso, a mystic coati with a ringed tail and bright eyes, evolved form, larger and more powerful, extra nature and fire details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM038A.png",
+    "out": "assets/sprites/FM038A.png",
+    "out64": "assets/sprites64/FM038A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM038B",
+    "name": "Quati-Malandro",
+    "prompt": "pixel art game sprite of Quati-Malandro, a mystic coati with a ringed tail and bright eyes, final evolution, majestic and imposing, glowing nature and fire aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM038B.png",
+    "out": "assets/sprites/FM038B.png",
+    "out64": "assets/sprites64/FM038B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM039",
+    "name": "Morcego-Místico",
+    "prompt": "pixel art game sprite of Morcego-Místico, small a mystic bat with tattered wings and glowing red eyes, cute chibi proportions, wind element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM039.png",
+    "out": "assets/sprites/FM039.png",
+    "out64": "assets/sprites64/FM039.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM039A",
+    "name": "Morcego-Vampiro",
+    "prompt": "pixel art game sprite of Morcego-Vampiro, a mystic bat with tattered wings and glowing red eyes, evolved form, larger and more powerful, extra wind and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM039A.png",
+    "out": "assets/sprites/FM039A.png",
+    "out64": "assets/sprites64/FM039A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM039B",
+    "name": "Morcego das Trevas",
+    "prompt": "pixel art game sprite of Morcego das Trevas, a mystic bat with tattered wings and glowing red eyes, final evolution, majestic and imposing, glowing wind and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM039B.png",
+    "out": "assets/sprites/FM039B.png",
+    "out64": "assets/sprites64/FM039B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM040",
+    "name": "Jabuti-Místico",
+    "prompt": "pixel art game sprite of Jabuti-Místico, small a wise mystic tortoise with a mossy shell and ancient runes, cute chibi proportions, earth element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM040.png",
+    "out": "assets/sprites/FM040.png",
+    "out64": "assets/sprites64/FM040.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM040A",
+    "name": "Jabuti-Sabio",
+    "prompt": "pixel art game sprite of Jabuti-Sabio, a wise mystic tortoise with a mossy shell and ancient runes, evolved form, larger and more powerful, extra earth and nature details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM040A.png",
+    "out": "assets/sprites/FM040A.png",
+    "out64": "assets/sprites64/FM040A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM040B",
+    "name": "Jabuti-Ancião",
+    "prompt": "pixel art game sprite of Jabuti-Ancião, a wise mystic tortoise with a mossy shell and ancient runes, final evolution, majestic and imposing, glowing earth and nature aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM040B.png",
+    "out": "assets/sprites/FM040B.png",
+    "out64": "assets/sprites64/FM040B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM041",
+    "name": "Cobra-Coral",
+    "prompt": "pixel art game sprite of Cobra-Coral, small a coral snake with vivid red, black and yellow bands, cute chibi proportions, fire element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM041.png",
+    "out": "assets/sprites/FM041.png",
+    "out64": "assets/sprites64/FM041.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM041A",
+    "name": "Cobra-Coral-Venenosa",
+    "prompt": "pixel art game sprite of Cobra-Coral-Venenosa, a coral snake with vivid red, black and yellow bands, evolved form, larger and more powerful, extra fire and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM041A.png",
+    "out": "assets/sprites/FM041A.png",
+    "out64": "assets/sprites64/FM041A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM041B",
+    "name": "Cobra-Coral-Rei",
+    "prompt": "pixel art game sprite of Cobra-Coral-Rei, a coral snake with vivid red, black and yellow bands, final evolution, majestic and imposing, glowing fire and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM041B.png",
+    "out": "assets/sprites/FM041B.png",
+    "out64": "assets/sprites64/FM041B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM042",
+    "name": "Tucano-Místico",
+    "prompt": "pixel art game sprite of Tucano-Místico, small a mystic toucan with a huge colorful beak, cute chibi proportions, wind element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM042.png",
+    "out": "assets/sprites/FM042.png",
+    "out64": "assets/sprites64/FM042.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM042A",
+    "name": "Tucano-Arco-Íris",
+    "prompt": "pixel art game sprite of Tucano-Arco-Íris, a mystic toucan with a huge colorful beak, evolved form, larger and more powerful, extra wind and lightning details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM042A.png",
+    "out": "assets/sprites/FM042A.png",
+    "out64": "assets/sprites64/FM042A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM042B",
+    "name": "Tucano das Cores",
+    "prompt": "pixel art game sprite of Tucano das Cores, a mystic toucan with a huge colorful beak, final evolution, majestic and imposing, glowing wind and lightning aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM042B.png",
+    "out": "assets/sprites/FM042B.png",
+    "out64": "assets/sprites64/FM042B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM043",
+    "name": "Preguiça-Mística",
+    "prompt": "pixel art game sprite of Preguiça-Mística, small a dreamy mystic sloth with mossy fur and sleepy eyes, cute chibi proportions, nature element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM043.png",
+    "out": "assets/sprites/FM043.png",
+    "out64": "assets/sprites64/FM043.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM043A",
+    "name": "Preguiça-Sonhadora",
+    "prompt": "pixel art game sprite of Preguiça-Sonhadora, a dreamy mystic sloth with mossy fur and sleepy eyes, evolved form, larger and more powerful, extra nature and wind details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM043A.png",
+    "out": "assets/sprites/FM043A.png",
+    "out64": "assets/sprites64/FM043A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM043B",
+    "name": "Preguiça dos Sonhos",
+    "prompt": "pixel art game sprite of Preguiça dos Sonhos, a dreamy mystic sloth with mossy fur and sleepy eyes, final evolution, majestic and imposing, glowing nature and wind aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM043B.png",
+    "out": "assets/sprites/FM043B.png",
+    "out64": "assets/sprites64/FM043B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM044",
+    "name": "Porco-Do-Mato",
+    "prompt": "pixel art game sprite of Porco-Do-Mato, small a wild boar with bristly fur and curved tusks, cute chibi proportions, earth element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM044.png",
+    "out": "assets/sprites/FM044.png",
+    "out64": "assets/sprites64/FM044.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM044A",
+    "name": "Javali-Fantasma",
+    "prompt": "pixel art game sprite of Javali-Fantasma, a wild boar with bristly fur and curved tusks, evolved form, larger and more powerful, extra earth and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM044A.png",
+    "out": "assets/sprites/FM044A.png",
+    "out64": "assets/sprites64/FM044A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM044B",
+    "name": "Javali das Trevas",
+    "prompt": "pixel art game sprite of Javali das Trevas, a wild boar with bristly fur and curved tusks, final evolution, majestic and imposing, glowing earth and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM044B.png",
+    "out": "assets/sprites/FM044B.png",
+    "out64": "assets/sprites64/FM044B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM045",
+    "name": "Perereca-Mística",
+    "prompt": "pixel art game sprite of Perereca-Mística, small a tiny tree frog with rainbow dew drops on its skin, cute chibi proportions, water element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM045.png",
+    "out": "assets/sprites/FM045.png",
+    "out64": "assets/sprites64/FM045.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM045A",
+    "name": "Perereca-Arco-Íris",
+    "prompt": "pixel art game sprite of Perereca-Arco-Íris, a tiny tree frog with rainbow dew drops on its skin, evolved form, larger and more powerful, extra water and lightning details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM045A.png",
+    "out": "assets/sprites/FM045A.png",
+    "out64": "assets/sprites64/FM045A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM045B",
+    "name": "Perereca das Chuvas",
+    "prompt": "pixel art game sprite of Perereca das Chuvas, a tiny tree frog with rainbow dew drops on its skin, final evolution, majestic and imposing, glowing water and lightning aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM045B.png",
+    "out": "assets/sprites/FM045B.png",
+    "out64": "assets/sprites64/FM045B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM046",
+    "name": "Sabiá-Místico",
+    "prompt": "pixel art game sprite of Sabiá-Místico, small a mystic songbird with warm brown feathers and a musical aura, cute chibi proportions, wind element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM046.png",
+    "out": "assets/sprites/FM046.png",
+    "out64": "assets/sprites64/FM046.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM046A",
+    "name": "Sabiá-Cantor Mágico",
+    "prompt": "pixel art game sprite of Sabiá-Cantor Mágico, a mystic songbird with warm brown feathers and a musical aura, evolved form, larger and more powerful, extra wind and lightning details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM046A.png",
+    "out": "assets/sprites/FM046A.png",
+    "out64": "assets/sprites64/FM046A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM046B",
+    "name": "Sabiá-Laranjeira Místico",
+    "prompt": "pixel art game sprite of Sabiá-Laranjeira Místico, a mystic songbird with warm brown feathers and a musical aura, final evolution, majestic and imposing, glowing wind and lightning aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM046B.png",
+    "out": "assets/sprites/FM046B.png",
+    "out64": "assets/sprites64/FM046B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM047",
+    "name": "Arara-Mística",
+    "prompt": "pixel art game sprite of Arara-Mística, small a mystic macaw with vivid blue and red feathers, cute chibi proportions, wind element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM047.png",
+    "out": "assets/sprites/FM047.png",
+    "out64": "assets/sprites64/FM047.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM047A",
+    "name": "Arara-Jacinto",
+    "prompt": "pixel art game sprite of Arara-Jacinto, a mystic macaw with vivid blue and red feathers, evolved form, larger and more powerful, extra wind and fire details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM047A.png",
+    "out": "assets/sprites/FM047A.png",
+    "out64": "assets/sprites64/FM047A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM047B",
+    "name": "Arara-Azul Mística",
+    "prompt": "pixel art game sprite of Arara-Azul Mística, a mystic macaw with vivid blue and red feathers, final evolution, majestic and imposing, glowing wind and fire aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM047B.png",
+    "out": "assets/sprites/FM047B.png",
+    "out64": "assets/sprites64/FM047B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM048",
+    "name": "Beija-Flor Místico",
+    "prompt": "pixel art game sprite of Beija-Flor Místico, small a tiny hummingbird with iridescent crystal feathers, cute chibi proportions, wind element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM048.png",
+    "out": "assets/sprites/FM048.png",
+    "out64": "assets/sprites64/FM048.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM048A",
+    "name": "Beija-Flor de Cristal",
+    "prompt": "pixel art game sprite of Beija-Flor de Cristal, a tiny hummingbird with iridescent crystal feathers, evolved form, larger and more powerful, extra wind and lightning details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM048A.png",
+    "out": "assets/sprites/FM048A.png",
+    "out64": "assets/sprites64/FM048A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM048B",
+    "name": "Colibri Místico",
+    "prompt": "pixel art game sprite of Colibri Místico, a tiny hummingbird with iridescent crystal feathers, final evolution, majestic and imposing, glowing wind and lightning aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM048B.png",
+    "out": "assets/sprites/FM048B.png",
+    "out64": "assets/sprites64/FM048B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM049",
+    "name": "Suindara-Mística",
+    "prompt": "pixel art game sprite of Suindara-Mística, small a barn owl spirit with a heart-shaped face and pale wings, cute chibi proportions, wind element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM049.png",
+    "out": "assets/sprites/FM049.png",
+    "out64": "assets/sprites64/FM049.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM049A",
+    "name": "Suindara-Fantasma",
+    "prompt": "pixel art game sprite of Suindara-Fantasma, a barn owl spirit with a heart-shaped face and pale wings, evolved form, larger and more powerful, extra wind and shadow details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM049A.png",
+    "out": "assets/sprites/FM049A.png",
+    "out64": "assets/sprites64/FM049A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM049B",
+    "name": "Gavião-Real Místico",
+    "prompt": "pixel art game sprite of Gavião-Real Místico, a barn owl spirit with a heart-shaped face and pale wings, final evolution, majestic and imposing, glowing wind and shadow aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM049B.png",
+    "out": "assets/sprites/FM049B.png",
+    "out64": "assets/sprites64/FM049B.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM050",
+    "name": "Urubu-Místico",
+    "prompt": "pixel art game sprite of Urubu-Místico, small a mystic vulture with dark feathers and a bone necklace, cute chibi proportions, shadow element, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM050.png",
+    "out": "assets/sprites/FM050.png",
+    "out64": "assets/sprites64/FM050.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM050A",
+    "name": "Urubu-Rei",
+    "prompt": "pixel art game sprite of Urubu-Rei, a mystic vulture with dark feathers and a bone necklace, evolved form, larger and more powerful, extra shadow and wind details, confident pose, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM050A.png",
+    "out": "assets/sprites/FM050A.png",
+    "out64": "assets/sprites64/FM050A.png",
+    "flat_chroma": true
+  },
+  {
+    "id": "FM050B",
+    "name": "Corvo das Almas",
+    "prompt": "pixel art game sprite of Corvo das Almas, a mystic vulture with dark feathers and a bone necklace, final evolution, majestic and imposing, glowing shadow and wind aura, legendary presence, pixel art game sprite, 32x32 pixel art style, crisp pixels, centered full figure, solid flat pure chroma key green background (#00FF00), no shadow, no text, no watermark, game asset",
+    "raw": "assets/chroma/FM050B.png",
+    "out": "assets/sprites/FM050B.png",
+    "out64": "assets/sprites64/FM050B.png",
+    "flat_chroma": true
+  }
+]

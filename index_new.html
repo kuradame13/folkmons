@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folkmons - Folclore Brasileiro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="authScreen" class="screen">
+        <div class="auth-container">
+            <h1>Folkmons</h1>
+            <p class="subtitle">Folclore Brasileiro | Scan & Capture</p>
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('login')">Login</button>
+                <button class="tab-btn" onclick="showTab('register')">Criar Conta</button>
+                <button class="tab-btn" onclick="showTab('changePass')">Trocar Senha</button>
+            </div>
+            
+            <div id="loginTab" class="tab-content active">
+                <input type="text" id="loginUsername" placeholder="Usuário" maxlength="20">
+                <input type="password" id="loginPassword" placeholder="Senha">
+                <button onclick="login()">Entrar</button>
+                <p id="loginMsg" class="msg"></p>
+            </div>
+            
+            <div id="registerTab" class="tab-content">
+                <input type="text" id="regUsername" placeholder="Usuário (3-20 caracteres)" maxlength="20">
+                <input type="password" id="regPassword" placeholder="Senha (mín. 4 caracteres)">
+                <input type="password" id="regPassword2" placeholder="Confirmar Senha">
+                <button onclick="register()">Criar Conta</button>
+                <p id="regMsg" class="msg"></p>
+            </div>
+            
+            <div id="changePassTab" class="tab-content">
+                <input type="text" id="cpUsername" placeholder="Usuário">
+                <input type="password" id="cpOldPass" placeholder="Senha Atual">
+                <input type="password" id="cpNewPass" placeholder="Nova Senha (mín. 4 caracteres)">
+                <input type="password" id="cpNewPass2" placeholder="Confirmar Nova Senha">
+                <button onclick="changePassword()">Trocar Senha</button>
+                <p id="cpMsg" class="msg"></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="gameScreen" class="screen" style="display:none;">
+        <div class="game-header">
+            <div class="header-left">
+                <span id="playerName"></span> | Nível <span id="playerLevel"></span> | $<span id="playerMoney"></span>
+            </div>
+            <div class="header-right">
+                <button onclick="openMenu('team')">Time</button>
+                <button onclick="openMenu('items')">Itens</button>
+                <button onclick="openMenu('trades')">Trocas</button>
+                <button onclick="openMenu('phone')">📱 Celular</button>
+                <button onclick="logout()">Sair</button>
+            </div>
+        </div>
+        
+        <div class="game-container">
+            <canvas id="gameMap" width="800" height="600"></canvas>
+            <div class="game-ui">
+                <div id="locationInfo"><strong>Região:</strong> Sertão Folclórico</div>
+            </div>
+        </div>
+        
+        <div id="menuOverlay" class="overlay" style="display:none;">
+            <div class="menu-box">
+                <div class="menu-header">
+                    <h2 id="menuTitle">Menu</h2>
+                    <button onclick="closeMenu()">X</button>
+                </div>
+                <div id="menuContent" class="menu-content"></div>
+            </div>
+        </div>
+        
+        <div id="battleScreen" class="battle-overlay" style="display:none;">
+            <div class="battle-container">
+                <div class="battle-top">
+                    <div class="enemy-info">
+                        <div class="enemy-name"><span id="enemyName"></span> Lv.<span id="enemyLevel"></span></div>
+                        <div class="hp-bar"><div id="enemyHpBar" class="hp-fill"></div></div>
+                        <div class="hp-text"><span id="enemyHpText"></span></div>
+                    </div>
+                    <div class="enemy-sprite" id="enemySprite">👾</div>
+                </div>
+                <div class="battle-bottom">
+                    <div class="player-sprite" id="playerSprite">🧍</div>
+                    <div class="player-info">
+                        <div class="player-name"><span id="battlePlayerName"></span> Lv.<span id="battlePlayerLevel"></span></div>
+                        <div class="hp-bar"><div id="playerHpBar" class="hp-fill"></div></div>
+                        <div class="hp-text"><span id="playerHpText"></span></div>
+                    </div>
+                </div>
+                <div class="battle-actions">
+                    <div id="battleMainActions" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1;">
+                        <button onclick="battleAction('attack')">Atacar</button>
+                        <button onclick="battleAction('item')">Item</button>
+                        <button onclick="battleAction('run')">Fugir</button>
+                    </div>
+                    <div id="battleLog" class="battle-log"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="folkmons_data.js"></script>
+    <script src="game_new.js"></script>
+</body>
+</html>

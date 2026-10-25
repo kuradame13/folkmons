@@ -1,0 +1,18 @@
+# protótipo antigo (o jogo atual é index.html + game_new.js)
+index_antigo.html
+game.js
+
+# sprites com fundo verde e testes locais (o jogo usa assets/sprites/)
+assets/chroma/
+assets/test_green/
+assets/raw/
+
+# logs de geracao
+tools/batch*.log
+
+# pacotes de entrega
+*.zip
+
+# python
+__pycache__/
+*.pyc
