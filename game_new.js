@@ -1870,8 +1870,9 @@ function cancelToast() {
 
 function hideToast() {
     const el = document.getElementById('toast');
-    if(!el) return;
     clearTimeout(toastTimer);
+    toastCurrent = null;
+    if(!el) return;
     el.classList.remove('show');
     el.style.display = 'none';
     updateToastQueue();
