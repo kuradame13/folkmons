@@ -11,6 +11,7 @@
         <div class="auth-container">
             <h1>Folkmons</h1>
             <p class="subtitle">Folclore Brasileiro | Scan & Capture</p>
+            <p id="cloudBadge" class="cloud-badge" style="display:none;"></p>
             
             <div class="tabs">
                 <button class="tab-btn active" onclick="showTab('login')">Login</button>
@@ -27,6 +28,7 @@
             
             <div id="registerTab" class="tab-content">
                 <input type="text" id="regUsername" placeholder="Usuário (3-20 caracteres)" maxlength="20">
+                <input type="email" id="regEmail" placeholder="E-mail" style="display:none;">
                 <input type="password" id="regPassword" placeholder="Senha (mín. 4 caracteres)">
                 <input type="password" id="regPassword2" placeholder="Confirmar Senha">
                 <button onclick="register()">Criar Conta</button>
@@ -34,11 +36,18 @@
             </div>
             
             <div id="changePassTab" class="tab-content">
-                <input type="text" id="cpUsername" placeholder="Usuário">
-                <input type="password" id="cpOldPass" placeholder="Senha Atual">
-                <input type="password" id="cpNewPass" placeholder="Nova Senha (mín. 4 caracteres)">
-                <input type="password" id="cpNewPass2" placeholder="Confirmar Nova Senha">
-                <button onclick="changePassword()">Trocar Senha</button>
+                <div id="cpPasswordFields">
+                    <input type="text" id="cpUsername" placeholder="Usuário">
+                    <input type="password" id="cpOldPass" placeholder="Senha Atual">
+                    <input type="password" id="cpNewPass" placeholder="Nova Senha (mín. 4 caracteres)">
+                    <input type="password" id="cpNewPass2" placeholder="Confirmar Nova Senha">
+                    <button onclick="changePassword()">Trocar Senha</button>
+                </div>
+                <div id="cpResetFields" style="display:none;">
+                    <p style="font-size:13px;color:#555;text-align:center;">Digite o e-mail da sua conta para receber um link de redefinição de senha.</p>
+                    <input type="email" id="cpEmail" placeholder="E-mail da conta">
+                    <button onclick="sendPasswordReset()">Enviar link de redefinição</button>
+                </div>
                 <p id="cpMsg" class="msg"></p>
             </div>
         </div>
@@ -54,6 +63,7 @@
                 <button onclick="openMenu('items')">Itens</button>
                 <button onclick="openMenu('trades')">Trocas</button>
                 <button onclick="openMenu('phone')">📱 Celular</button>
+                <button onclick="openChangePassword()">Senha</button>
                 <button onclick="logout()">Sair</button>
             </div>
         </div>
@@ -72,6 +82,22 @@
                     <button onclick="closeMenu()">X</button>
                 </div>
                 <div id="menuContent" class="menu-content"></div>
+            </div>
+        </div>
+
+        <div id="passwordOverlay" class="overlay" style="display:none;">
+            <div class="menu-box" style="max-width:420px;">
+                <div class="menu-header">
+                    <h2>Trocar Senha</h2>
+                    <button onclick="closeChangePassword()">X</button>
+                </div>
+                <div style="padding:20px; display:flex; flex-direction:column; gap:10px;">
+                    <input type="password" id="gameOldPass" placeholder="Senha atual">
+                    <input type="password" id="gameNewPass" placeholder="Nova senha">
+                    <input type="password" id="gameNewPass2" placeholder="Confirmar nova senha">
+                    <button id="gameChangePassBtn" onclick="changePasswordLoggedIn()">Salvar nova senha</button>
+                    <p id="gamePassMsg" class="msg"></p>
+                </div>
             </div>
         </div>
         
@@ -94,11 +120,7 @@
                     </div>
                 </div>
                 <div class="battle-actions">
-                    <div id="battleMainActions" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1;">
-                        <button onclick="battleAction('attack')">Atacar</button>
-                        <button onclick="battleAction('item')">Item</button>
-                        <button onclick="battleAction('run')">Fugir</button>
-                    </div>
+                    <div id="battleMainActions"></div>
                     <div id="battleLog" class="battle-log"></div>
                 </div>
             </div>
@@ -106,6 +128,9 @@
     </div>
     
     <script src="folkmons_data.js"></script>
+    <script src="vendor/supabase.js"></script>
+    <script src="cloud_config.js"></script>
+    <script src="cloud_auth.js"></script>
     <script src="game_new.js"></script>
 </body>
 </html>

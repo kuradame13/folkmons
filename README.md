@@ -8,6 +8,14 @@ pelo **Scan** do celular.
 ## O que já está pronto
 
 - Login, cadastro e troca de senha **locais** (salvos no `localStorage`).
+- **Conta na nuvem pronta para Supabase**: cadastro por e-mail, login, troca de
+  senha, redefinição por e-mail e save sincronizado. Veja
+  [`docs/nuvem.md`](docs/nuvem.md) para ativar com duas chaves.
+- **Treinador visível no mapa**, com sprite próprio em 4 direções, animação de
+  caminhada, sombra, seta e etiqueta “VOCÊ”. Ande com **WASD** ou setas.
+- **Menu de batalha completo**: 4 golpes por Folkmom, vantagens de tipo,
+  troca de Folkmom, itens, fuga, EXP, level up, recompensa em moedas e captura
+  ao vencer.
 - 3 iniciais: **Iarinha** (Água), **Caiporinha** (Grama) e **Saci-Embrião**
   (Fogo).
 - 50 famílias de Folkmons do folclore, com 2 evoluções cada (153 formas no
@@ -23,12 +31,17 @@ pelo **Scan** do celular.
 ## Como jogar
 
 1. Abra o arquivo `index.html` no navegador.
-2. Crie uma conta (ela fica salva só neste navegador).
+2. Crie uma conta. Sem as chaves do Supabase, ela fica salva só neste
+   navegador; com a nuvem ativada, o save acompanha a conta.
 3. Escolha seu Folkmom inicial.
-4. Ande pelo mapa com **WASD** ou setas.
+4. Ande pelo mapa com **WASD** ou setas; o treinador aparece com a etiqueta
+   “VOCÊ”.
 5. Pise nos itens, abra o celular e use o **Scan**.
 6. Quando o Scan chegar a 100%, conserte o Scan para gerar o Folkmom.
-7. Batalhe, ganhe EXP, evolua e troque com o NPC de trocas.
+7. No menu de batalha, escolha **Atacar** (4 golpes), **Trocar**, **Item** ou
+   **Fugir**. Ao vencer, você ganha EXP, moedas e pode adicionar o Folkmom ao
+   time.
+8. Troque com o NPC de trocas e use a senha no botão **Senha** do topo.
 
 Se o navegador bloquear alguma coisa ao abrir direto pelo `file://`, rode um
 servidor local:
@@ -88,13 +101,35 @@ index_antigo.html     protótipo antigo (backup)
 style.css             estilos do jogo
 folkmons_data.js      dados dos 153 Folkmons, itens e evoluções
 game_new.js           lógica do jogo (login, mapa, scan, batalha, trocas)
+cloud_config.js       URL e chave anon do Supabase
+cloud_auth.js         login/cadastro/senha/save na nuvem
+vendor/supabase.js    SDK do Supabase (para funcionar sem CDN)
 galeria.html          galeria para revisar os sprites
 assets/sprites/       PNGs transparentes 128×128
 assets/sprites64/     PNGs transparentes 64×64
+assets/trainer/       folha de sprites do treinador
 assets/chroma/        PNGs com fundo verde chroma puro (1024×1024)
-docs/                 prompts e ideias de lendários
-tools/                scripts de geração e empacotamento
+docs/                 prompts, ideias de lendários e guia da nuvem
+tools/                scripts de geração, treinador e empacotamento
 ```
+
+## Conta na nuvem (opcional, recomendado)
+
+O código da nuvem já está no jogo, mas fica desligado até você criar um projeto
+gratuito no Supabase e colocar a **Project URL** e a **anon public key** em
+`cloud_config.js`.
+
+Passo a passo completo: [`docs/nuvem.md`](docs/nuvem.md).
+
+Com a nuvem ligada:
+
+- cadastro por e-mail, login e senha com hash no Supabase;
+- botão **Senha** no jogo para trocar a senha logado;
+- aba **Redefinir Senha** para receber link por e-mail;
+- save (time, itens, posição, evoluções) sincronizado na conta.
+
+A chave **anon** é pública e pode ficar no site. Nunca use a
+**service_role** no navegador.
 
 ## Sprites e fundo verde
 
@@ -161,8 +196,10 @@ Ideias de lendários: `docs/legendarios.md`.
 
 ## Limitações e avisos
 
-- As contas são locais do navegador. Não são seguras para produção e somem se
-  o usuário limpar os dados do site.
+- Sem as chaves do Supabase, as contas continuam locais do navegador: somem se
+  o usuário limpar os dados do site. Com a nuvem ativada, o Supabase cuida do
+  hash da senha e do save; a chave anon é pública, mas o projeto free pode ser
+  pausado após 7 dias sem uso.
 - O projeto é um protótipo: balanceamento, mapas e quests ainda podem mudar.
 - Confira os sprites na galeria. Alguns podem precisar de ajuste manual (por
   exemplo, o Saci às vezes sai com duas pernas).
