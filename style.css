@@ -22,7 +22,10 @@
 }
 
 body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background:
+        radial-gradient(circle at 50% 16%, rgba(56, 189, 248, 0.13) 0%, rgba(2, 6, 23, 0) 45%),
+        radial-gradient(circle at 82% 82%, rgba(74, 222, 128, 0.08) 0%, rgba(2, 6, 23, 0) 42%),
+        #020617;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -39,24 +42,30 @@ body {
 
 /* ===================== LOGIN / CONTA ===================== */
 .auth-container {
-    background: white;
-    padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    width: 400px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98));
+    border: 1px solid rgba(250, 204, 21, 0.32);
+    color: var(--text);
+    padding: 38px 40px;
+    border-radius: 12px;
+    box-shadow:
+        0 0 0 1px rgba(148, 163, 184, 0.14),
+        0 26px 80px rgba(0, 0, 0, 0.68);
+    width: 410px;
     max-width: 90%;
 }
 
 .auth-container h1 {
     text-align: center;
-    color: #667eea;
+    color: var(--gold);
     font-size: 2.5em;
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 28px rgba(250, 204, 21, 0.16);
     margin-bottom: 5px;
 }
 
 .subtitle {
     text-align: center;
-    color: #666;
+    color: var(--muted);
     margin-bottom: 30px;
 }
 
@@ -64,9 +73,9 @@ body {
     text-align: center;
     font-size: 11px;
     font-weight: bold;
-    color: #15803d;
-    background: #dcfce7;
-    border: 1px solid #86efac;
+    color: #bbf7d0;
+    background: rgba(20, 83, 45, 0.58);
+    border: 1px solid rgba(74, 222, 128, 0.5);
     border-radius: 999px;
     padding: 3px 10px;
     width: fit-content;
@@ -82,15 +91,24 @@ body {
 .tab-btn {
     flex: 1;
     padding: 10px;
-    border: none;
-    background: #f0f0f0;
+    border: 1px solid #334155;
+    background: rgba(30, 41, 59, 0.72);
+    color: #cbd5e1;
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: 6px;
+    font-family: inherit;
+}
+
+.tab-btn:hover {
+    border-color: var(--gold);
+    color: #fff;
 }
 
 .tab-btn.active {
-    background: #667eea;
-    color: white;
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #111827;
+    font-weight: bold;
 }
 
 .tab-content {
@@ -106,27 +124,36 @@ body {
 .tab-content input,
 #passwordOverlay input {
     padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
+    border: 1px solid #475569;
+    border-radius: 7px;
+    background: #0b1220;
+    color: #e2e8f0;
     font-size: 14px;
     width: 100%;
+}
+
+.tab-content input:focus,
+#passwordOverlay input:focus {
+    outline: none;
+    border-color: var(--gold);
 }
 
 .tab-content button,
 #gameChangePassBtn {
     padding: 12px;
-    background: #667eea;
-    color: white;
+    background: var(--gold);
+    color: #111827;
     border: none;
-    border-radius: 8px;
+    border-radius: 7px;
     cursor: pointer;
-    font-size: 16px;
+    font-family: inherit;
+    font-size: 15px;
     font-weight: bold;
 }
 
 .tab-content button:hover,
 #gameChangePassBtn:hover {
-    background: #5568d3;
+    background: #fde047;
 }
 
 .msg {
