@@ -26,8 +26,14 @@ let followerImg = null;
 let followerImageId = '';
 let followerReady = false;
 let toastTimer = null;
+let toastQueue = [];
+let toastCurrent = null;
 let playTimer = null;
 let hudTimer = null;
+let touchControlsEnabled = false;
+let touchControlsReady = false;
+let touchVector = { x: 0, y: 0 };
+let stickPointerId = null;
 
 // All folkmons flattened
 let ALL_FOLKMONS = [];
@@ -137,6 +143,7 @@ function normalizePlayer() {
     player.guild = typeof player.guild === 'string' ? player.guild : '';
     player.trainerName = typeof player.trainerName === 'string' ? player.trainerName : '';
     player.settings = Object.assign({ chat: true, hotbar: true }, player.settings || {});
+    if(typeof player.settings.touchControls !== 'boolean') player.settings.touchControls = isTouchCapable();
     if(!player.pos) player.pos = { x: 400, y: 300 };
 
     // Saves antigos não tinham Enciclore. O time atual conta como visto/capturado.
@@ -568,7 +575,8 @@ async function logout() {
     if(battleActions) battleActions.innerHTML = '';
     const menuOverlay = document.getElementById('menuOverlay');
     if(menuOverlay) menuOverlay.style.display = 'none';
-    hideToast();
+    cancelToast();
+    resetTouchStick();
 
     chatState.active = 'Local';
     chatState.messages = {};
@@ -666,6 +674,109 @@ function isGamePaused() {
     if(menu && menu.style.display !== 'none') return true;
     if(pass && pass.style.display !== 'none') return true;
     return false;
+}
+
+// ===================== CONTROLES DE TOQUE =====================
+function isTouchCapable() {
+    try {
+        return (navigator.maxTouchPoints || 0) > 0 ||
+            !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    } catch(e) {
+        return false;
+    }
+}
+
+function applyTouchControls(enabled) {
+    touchControlsEnabled = !!enabled;
+    const box = document.getElementById('touchControls');
+    if(box) {
+        box.classList.toggle('active', touchControlsEnabled);
+        box.setAttribute('aria-hidden', touchControlsEnabled ? 'false' : 'true');
+    }
+    if(!touchControlsEnabled) resetTouchStick();
+}
+
+function toggleTouchControls() {
+    if(!player) return;
+    if(!player.settings) player.settings = { chat: true, hotbar: true };
+    player.settings.touchControls = !touchControlsEnabled;
+    applyTouchControls(player.settings.touchControls);
+    saveGame();
+    if(currentMenuType === 'game' && isMenuOpen()) renderGameMenu();
+}
+
+function resetTouchStick() {
+    touchVector.x = 0;
+    touchVector.y = 0;
+    const knob = document.getElementById('stickKnob');
+    if(knob) knob.style.transform = 'translate(0px, 0px)';
+    const stick = document.getElementById('moveStick');
+    if(stick && stickPointerId !== null && stick.hasPointerCapture && stick.hasPointerCapture(stickPointerId)) {
+        try { stick.releasePointerCapture(stickPointerId); } catch(e) {}
+    }
+    stickPointerId = null;
+}
+
+function updateTouchStick(clientX, clientY) {
+    const stick = document.getElementById('moveStick');
+    const knob = document.getElementById('stickKnob');
+    if(!stick || !knob) return;
+    const rect = stick.getBoundingClientRect();
+    if(!rect || !rect.width || !rect.height) return;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let dx = clientX - cx;
+    let dy = clientY - cy;
+    const knobSize = knob.offsetWidth || 38;
+    const travel = Math.max(10, rect.width / 2 - knobSize / 2 - 7);
+    const distance = Math.hypot(dx, dy);
+    if(distance > travel) {
+        dx = (dx / distance) * travel;
+        dy = (dy / distance) * travel;
+    }
+    knob.style.transform = 'translate(' + dx.toFixed(1) + 'px, ' + dy.toFixed(1) + 'px)';
+    touchVector.x = Math.max(-1, Math.min(1, dx / travel));
+    touchVector.y = Math.max(-1, Math.min(1, dy / travel));
+}
+
+function handleTouchStickStart(e) {
+    if(!touchControlsEnabled) return;
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    const stick = document.getElementById('moveStick');
+    if(!stick) return;
+    stickPointerId = e.pointerId;
+    if(stick.setPointerCapture) {
+        try { stick.setPointerCapture(e.pointerId); } catch(err) {}
+    }
+    updateTouchStick(e.clientX, e.clientY);
+    e.preventDefault();
+}
+
+function handleTouchStickMove(e) {
+    if(stickPointerId === null || e.pointerId !== stickPointerId) return;
+    updateTouchStick(e.clientX, e.clientY);
+    e.preventDefault();
+}
+
+function handleTouchStickEnd(e) {
+    if(stickPointerId === null || (e.pointerId !== undefined && e.pointerId !== stickPointerId)) return;
+    resetTouchStick();
+    if(e.preventDefault) e.preventDefault();
+}
+
+function initTouchControls() {
+    if(touchControlsReady) return;
+    touchControlsReady = true;
+    const stick = document.getElementById('moveStick');
+    if(!stick) return;
+    stick.addEventListener('pointerdown', handleTouchStickStart, { passive: false });
+    stick.addEventListener('pointermove', handleTouchStickMove, { passive: false });
+    stick.addEventListener('pointerup', handleTouchStickEnd, { passive: false });
+    stick.addEventListener('pointercancel', handleTouchStickEnd, { passive: false });
+    stick.addEventListener('lostpointercapture', resetTouchStick);
+    window.addEventListener('blur', resetTouchStick);
+    window.addEventListener('orientationchange', resetTouchStick);
+    window.addEventListener('resize', resetTouchStick);
 }
 
 function setupControls() {
@@ -767,6 +878,8 @@ function initGame() {
     ensurePlayerPosition();
     loadTrainerSheet();
     setupControls();
+    initTouchControls();
+    applyTouchControls(player.settings ? player.settings.touchControls : false);
     startHUDTimer();
 
     if(!player.starterChosen) {
@@ -889,8 +1002,18 @@ function updatePlayer() {
     if(keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= 1;
     if(keys['ArrowRight'] || keys['d'] || keys['D']) dx += 1;
 
+    // Direcional analógico: a intensidade do arrasto vira velocidade.
+    if(Math.hypot(touchVector.x, touchVector.y) > 0.12) {
+        dx += touchVector.x;
+        dy += touchVector.y;
+    }
+
     player.moving = !!(dx || dy);
-    if(dx && dy) { dx *= 0.7071; dy *= 0.7071; }
+    const moveMag = Math.hypot(dx, dy);
+    if(moveMag > 1) {
+        dx /= moveMag;
+        dy /= moveMag;
+    }
 
     if(dx < 0) player.dir = 1;
     else if(dx > 0) player.dir = 2;
@@ -1469,6 +1592,7 @@ function renderPhoneMenu() {
 function renderGameMenu() {
     const chatOn = player.settings ? player.settings.chat !== false : true;
     const hotbarOn = player.settings ? player.settings.hotbar !== false : true;
+    const touchOn = !!(player.settings && player.settings.touchControls);
     let html = '<div class="menu-section"><div class="menu-section-title">Jogo</div><div class="menu-grid-2">' +
         '<button class="menu-action" onclick="openMenu(\'card\')">🪪 Cartão de Treinador</button>' +
         '<button class="menu-action" onclick="openMenu(\'items\')">🎒 Mochila</button>' +
@@ -1481,6 +1605,7 @@ function renderGameMenu() {
     html += '<div class="menu-section"><div class="menu-section-title">Interface</div><div class="menu-grid-2">' +
         '<button class="menu-action" onclick="toggleHUDPanel(\'chat\')">💬 Chat: <b style="color:' + (chatOn ? '#4ade80' : '#f87171') + '">' + (chatOn ? 'ligado' : 'desligado') + '</b></button>' +
         '<button class="menu-action" onclick="toggleHUDPanel(\'hotbar\')">⌨️ Atalhos: <b style="color:' + (hotbarOn ? '#4ade80' : '#f87171') + '">' + (hotbarOn ? 'ligado' : 'desligado') + '</b></button>' +
+        '<button class="menu-action" style="grid-column:1/-1" onclick="toggleTouchControls()">🕹️ Direcional de toque: <b style="color:' + (touchOn ? '#4ade80' : '#f87171') + '">' + (touchOn ? 'ativado' : 'desativado') + '</b></button>' +
     '</div></div>';
 
     html += '<div class="menu-section"><div class="menu-section-title">Conta</div><div class="menu-grid-2">' +
@@ -1685,16 +1810,62 @@ function updateTopHUD() {
 function showToast(text, type) {
     const el = document.getElementById('toast');
     if(!el) return;
+    const item = {
+        text: String(text == null ? '' : text),
+        type: type || 'info'
+    };
+    if(!toastCurrent) {
+        displayToast(item);
+        return;
+    }
+    toastQueue.push(item);
+    if(toastQueue.length > 8) toastQueue.shift();
+    updateToastQueue();
+}
+
+function displayToast(item) {
+    const el = document.getElementById('toast');
+    if(!el) return;
     clearTimeout(toastTimer);
-    el.className = 'toast show ' + (type || 'info');
-    el.textContent = text;
+    toastCurrent = item;
+    el.className = 'toast show ' + item.type;
     el.style.display = 'block';
+    const textEl = document.getElementById('toastText');
+    if(textEl) textEl.textContent = item.text;
+    updateToastQueue();
     toastTimer = setTimeout(() => {
-        el.classList.remove('show');
-        setTimeout(() => {
-            if(!el.classList.contains('show')) el.style.display = 'none';
-        }, 220);
-    }, 2400);
+        if(toastCurrent === item) advanceToast();
+    }, 6000);
+}
+
+function updateToastQueue() {
+    const el = document.getElementById('toastQueueCount');
+    if(!el) return;
+    if(toastQueue.length > 0) {
+        el.textContent = '+' + toastQueue.length + ' na fila';
+        el.classList.add('visible');
+    } else {
+        el.textContent = '';
+        el.classList.remove('visible');
+    }
+}
+
+function advanceToast() {
+    if(!toastCurrent) {
+        if(toastQueue.length) displayToast(toastQueue.shift());
+        return;
+    }
+    clearTimeout(toastTimer);
+    toastCurrent = null;
+    if(toastQueue.length) displayToast(toastQueue.shift());
+    else hideToast();
+}
+
+function cancelToast() {
+    clearTimeout(toastTimer);
+    toastQueue = [];
+    toastCurrent = null;
+    hideToast();
 }
 
 function hideToast() {
@@ -1703,6 +1874,7 @@ function hideToast() {
     clearTimeout(toastTimer);
     el.classList.remove('show');
     el.style.display = 'none';
+    updateToastQueue();
 }
 
 // ===================== BARRA DA EQUIPE =====================
@@ -2386,6 +2558,7 @@ function leaveGuild() {
 function renderHelpMenu() {
     const html = '' +
         '<details class="help-item" open><summary>⌨️ Controles no mapa</summary><div><b>WASD</b> ou <b>setas</b> movem o treinador. <b>E</b> abre o Scanner. <b>1-9</b> usam os atalhos. <b>Esc</b> fecha menus. O Folkmom seguidor escolhido caminha ao seu lado.</div></details>' +
+        '<details class="help-item"><summary>📱 Android, direcional e mensagens</summary><div>Em celulares e tablets, o <b>direcional analógico</b> aparece à esquerda. Arraste o dedo para andar em qualquer direção e intensidade. Ative ou desative em <b>Menu do Jogo → Interface</b>. Quando aparecer uma mensagem, toque nela ou em <b>Continuar</b> para avançar; <b>Cancelar</b> fecha e limpa a fila. Em paisagem a área do jogo fica maior.</div></details>' +
         '<details class="help-item"><summary>📱 Como capturar Folkmons</summary><div>Abra o <b>Scanner</b> (botão Scan ou tecla E), inicie o Scan e aguarde passar de 100%. Depois clique em <b>Consertar Scan</b>. Ao encontrar um Folkmom, vença a batalha e escolha <b>Adicionar ao time</b>.</div></details>' +
         '<details class="help-item"><summary>⚔️ Batalha</summary><div>Escolha <b>Atacar</b> para ver os 4 golpes, <b>Trocar</b> para mudar o Folkmom em campo, <b>Item</b> para curar e <b>Fugir</b> para sair. As barras mostram PV; o log registra dano, vantagens de elemento, EXP, níveis e recompensas. Atalhos: 1-4 golpes, 5 itens, 6 troca, 0 fugir.</div></details>' +
         '<details class="help-item"><summary>🐾 Equipe e seguidor</summary><div>Clique em um slot no canto superior direito para abrir o submenu com <b>Sumário</b>, <b>Ordem do time</b> e <b>Seguidor</b>. O seguidor aparece no mapa e pode ser trocado a qualquer momento.</div></details>' +

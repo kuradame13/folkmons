@@ -70,6 +70,12 @@ comerciais: a captura é feita pelo **Scan** do celular.
    **Ordem** do time ou escolher o **Seguidor** que caminha no mapa.
 10. Arraste itens curativos da Mochila para os atalhos **1–9** ou use o botão
     **→ Atalho**. Botão direito em um atalho limpa o slot.
+11. Em **Android/celular**, o jogo mostra um **direcional analógico** à esquerda.
+    Arraste o dedo para andar em qualquer direção e intensidade. Para ativar ou
+    desativar, abra **Menu do Jogo → Interface → Direcional de toque**. Em
+    paisagem, a área do jogo fica maior.
+12. Quando aparecer uma mensagem, toque nela ou em **Continuar** para avançar.
+    O botão **Cancelar** fecha a mensagem e limpa a fila de avisos.
 
 Se o navegador bloquear alguma coisa ao abrir direto pelo `file://`, rode um
 servidor local:
