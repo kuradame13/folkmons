@@ -33,6 +33,7 @@ Em **Authentication → URL Configuration**:
 - **Redirect URLs** (adicione as duas):
   - `https://kuradame13.github.io/folkmons/**`
   - `http://localhost:8765/**`
+  - `http://127.0.0.1:8765/**`
 
 O segundo endereço serve para testar no computador. Se você publicar em outro
 endereço, adicione também.

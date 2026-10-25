@@ -148,7 +148,8 @@ caso, o PNG com transparência já resolve, ou use fundo azul/magenta no prompt.
 - Faltam **79**: `FM024B` e as famílias `FM025` a `FM050` (as três formas de
   cada uma).
 - O motivo foi o limite diário gratuito do Cloudflare Workers AI
-  (**10.000 neurons/dia**). Ele reseta às **00:00 UTC**.
+  (**10.000 neurons/dia**). Em 25/10 a cota ainda respondia **HTTP 429**; a
+  próxima tentativa pode ser feita mais tarde.
 - Enquanto isso, o jogo continua jogável: as formas sem PNG usam o emoji
   original como fallback.
 - A lista exata do que falta fica em `tools/missing.json`, gerada pelo
